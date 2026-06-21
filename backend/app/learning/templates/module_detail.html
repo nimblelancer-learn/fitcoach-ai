@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}{{ module_page.title }} | FitCoach AI Learn{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Module page</span>
+    <h1>{{ module_page.title }}</h1>
+    <p class="lede">{{ module_page.summary }}</p>
+    <p><strong>Why it exists:</strong> {{ module_page.why_it_exists }}</p>
+    <p><strong>When it runs:</strong> {{ module_page.when_it_runs }}</p>
+  </section>
+
+  <div class="detail-grid">
+    <section>
+      <h2>Dependencies</h2>
+      {% if module_page.dependencies %}
+        <ul class="meta-list">
+          {% for dependency in module_page.dependencies %}
+            <li>{{ dependency }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty-note">No extra dependencies are called out for this page.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>What uses it</h2>
+      {% if module_page.used_by %}
+        <ul class="meta-list">
+          {% for entry in module_page.used_by %}
+            <li>{{ entry }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty-note">This page does not list downstream callers yet.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Safe edit notes</h2>
+      <ul class="meta-list">
+        {% for note in module_page.safe_edit_notes %}
+          <li>{{ note }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Key functions</h2>
+        <p>Only the high-signal functions are documented here so the page stays readable.</p>
+      </div>
+    </div>
+    <div class="card-grid">
+      {% for function_entry in module_page.key_functions %}
+        <article class="panel">
+          <span class="kicker">{{ function_entry.name }}</span>
+          <p>{{ function_entry.summary }}</p>
+          <p><strong>Why it matters:</strong> {{ function_entry.why_it_matters }}</p>
+          <p><code>{{ function_entry.python_path }}</code></p>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="detail-grid">
+    <section>
+      <h2>Related modules</h2>
+      {% if related_modules %}
+        <ul class="tag-list">
+          {% for related_module in related_modules %}
+            <li>
+              <a href="/__learn/modules/{{ related_module.slug }}">{{ related_module.title }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty-note">No related modules linked from this page yet.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Related terms</h2>
+      {% if related_glossary_entries %}
+        <ul class="tag-list">
+          {% for entry in related_glossary_entries %}
+            <li>
+              <a href="/__learn/glossary#{{ entry.slug }}">{{ entry.term }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty-note">No glossary terms linked from this page yet.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Related flows</h2>
+      {% if related_flows %}
+        <ul class="tag-list">
+          {% for related_flow in related_flows %}
+            <li>
+              <a href="/__learn/flows/{{ related_flow.slug }}">{{ related_flow.title }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty-note">No related flows linked from this page yet.</p>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

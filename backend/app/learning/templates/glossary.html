@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Glossary | FitCoach AI Learn{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Glossary</span>
+    <h1>Backend terms used in this repo</h1>
+    <p class="lede">
+      This page explains a few recurring FastAPI and app-specific terms in plain
+      language, then points you back to the modules where they matter.
+    </p>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Terms</h2>
+        <p>Definitions stay short on purpose so this remains a quick lookup page.</p>
+      </div>
+    </div>
+    <div class="card-grid">
+      {% for entry in glossary_entries %}
+        <article class="panel" id="{{ entry.slug }}">
+          <span class="kicker">{{ entry.slug }}</span>
+          <h3>{{ entry.term }}</h3>
+          <p>{{ entry.definition }}</p>
+          <p><strong>Why this matters here:</strong> {{ entry.why_it_matters_in_repo }}</p>
+          {% if related_modules[entry.slug] %}
+            <p><strong>Read next:</strong></p>
+            <ul class="tag-list">
+              {% for module_page in related_modules[entry.slug] %}
+                <li>
+                  <a href="/__learn/modules/{{ module_page.slug }}">{{ module_page.title }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

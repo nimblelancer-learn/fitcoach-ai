@@ -1,0 +1,44 @@
+slug = "app-main"
+title = "app.main"
+module_path = "app.main"
+summary = "Builds the FastAPI application, wires in middleware and routers, and triggers the learning portal loader during startup when the flag is enabled."
+why_it_exists = "This is the assembly point for the backend. A beginner can inspect one file to see how the app is composed."
+when_it_runs = "When the ASGI server imports the application module and when FastAPI executes startup handlers."
+dependencies = [
+  "FastAPI for app construction and startup hooks.",
+  "app.core.logging.setup_logging to configure log formatting early.",
+  "app.core.errors.register_exception_handlers to keep failures consistent.",
+  "app.middleware.request_logging.request_logging_middleware to stamp and log every request.",
+  "app.api.routes_health and app.api.routes_learning for route registration.",
+]
+used_by = [
+  "The ASGI server imports app.main:app to serve requests.",
+  "Every incoming request uses the configured middleware, routers, and exception handlers attached here.",
+]
+safe_edit_notes = [
+  "Keep the app wiring shallow and readable so new contributors can trace startup without jumping across many files.",
+  "When adding global behavior, prefer explicit registration in create_app() over hidden side effects.",
+  "If you change startup loading, update the startup lifecycle flow page because it describes the current boot path.",
+]
+related_modules = [
+  "routes-health",
+  "request-logging",
+  "core-errors",
+  "core-logging",
+]
+related_flows = [
+  "startup-lifecycle",
+  "request-lifecycle",
+]
+
+[[key_functions]]
+name = "create_app"
+python_path = "app.main.create_app"
+summary = "Constructs the FastAPI instance and attaches settings, middleware, routers, and startup behavior."
+why_it_matters = "This function is the shortest path to understanding how the backend comes together."
+
+[[key_functions]]
+name = "startup"
+python_path = "app.main.startup"
+summary = "Loads curated learning content when enabled and logs the final startup state."
+why_it_matters = "This is where the dev-only portal validates its metadata once instead of on every request."

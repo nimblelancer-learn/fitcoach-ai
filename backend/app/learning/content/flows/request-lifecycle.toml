@@ -1,0 +1,48 @@
+slug = "request-lifecycle"
+title = "Request lifecycle"
+summary = "Walks through the current FastAPI request path in this repo from startup wiring to the final response."
+why_it_matters = "This is the fastest way to connect the separate modules into one mental model."
+when_to_read = "Read this after the overview if you want to understand how a request touches middleware, routing, and error handling."
+related_modules = [
+  "app-main",
+  "request-logging",
+  "routes-health",
+  "core-errors",
+  "core-logging",
+]
+
+[[steps]]
+title = "Application setup happens first"
+description = "When app.main is imported, create_app() configures logging, builds the FastAPI app, registers middleware and exception handlers, and includes routers."
+module_path = "app.main"
+python_path = "app.main.create_app"
+
+[[steps]]
+title = "Startup loads curated portal content when enabled"
+description = "During FastAPI startup, the app loads and validates the learning content once so request handlers can reuse it without repeating filesystem and import checks."
+module_path = "app.main"
+python_path = "app.main.startup"
+
+[[steps]]
+title = "Middleware assigns the request ID and starts timing"
+description = "For each HTTP request, the request logging middleware reads X-Request-ID if present, generates one otherwise, stores it on request.state, and starts a timer before calling the route layer."
+module_path = "app.middleware.request_logging"
+python_path = "app.middleware.request_logging.request_logging_middleware"
+
+[[steps]]
+title = "Routing dispatches to the endpoint"
+description = "FastAPI matches the path to a route handler such as the health endpoint, then executes the handler and produces a response object."
+module_path = "app.api.routes_health"
+python_path = "app.api.routes_health.health_check"
+
+[[steps]]
+title = "Errors are normalized when something goes wrong"
+description = "If validation fails or an exception escapes the route, the handlers registered in app.core.errors turn that failure into a consistent JSON response and preserve the request ID when available."
+module_path = "app.core.errors"
+python_path = "app.core.errors.register_exception_handlers"
+
+[[steps]]
+title = "Middleware finishes the response"
+description = "After the downstream handler returns, the middleware writes the X-Request-ID response header, logs the final status and duration, and returns the response to the client."
+module_path = "app.middleware.request_logging"
+python_path = "app.middleware.request_logging.request_logging_middleware"

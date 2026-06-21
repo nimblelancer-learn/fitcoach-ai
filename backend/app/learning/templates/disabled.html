@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Learning Portal Disabled{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Disabled</span>
+    <h1>Learning portal unavailable</h1>
+    <p class="lede">
+      This internal page is disabled for the current app instance.
+    </p>
+    <div class="panel">
+      <p>
+        To enable it locally, set <code>{{ flag_name }}=true</code> before
+        starting the backend and then reload <code>/__learn</code>.
+      </p>
+    </div>
+  </section>
+{% endblock %}

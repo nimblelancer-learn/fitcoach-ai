@@ -1,0 +1,30 @@
+slug = "request-logging"
+title = "app.middleware.request_logging"
+module_path = "app.middleware.request_logging"
+summary = "Adds a request ID, measures request duration, logs the completed request, and mirrors the request ID back in the response header."
+why_it_exists = "Cross-cutting request logging belongs in middleware so every route benefits without repeating the same code."
+when_it_runs = "Around every HTTP request before the route handler returns a response."
+dependencies = [
+  "FastAPI request and response objects.",
+  "uuid4 for generating fallback request IDs.",
+  "perf_counter for duration measurement.",
+]
+used_by = [
+  "app.main registers this middleware for the whole application.",
+  "app.core.errors uses request.state.request_id so error payloads can echo the same identifier.",
+]
+safe_edit_notes = [
+  "Preserve the request ID contract because both logs and JSON error responses rely on it.",
+  "Avoid heavyweight work in middleware because it affects every request, including simple health checks.",
+]
+related_modules = ["app-main", "core-errors", "core-logging"]
+related_flows = [
+  "startup-lifecycle",
+  "request-lifecycle",
+]
+
+[[key_functions]]
+name = "request_logging_middleware"
+python_path = "app.middleware.request_logging.request_logging_middleware"
+summary = "Wraps the downstream handler, tracks elapsed time, and logs the completed request with its request ID."
+why_it_matters = "It is the main per-request hook in the current app and explains how request state is shared."

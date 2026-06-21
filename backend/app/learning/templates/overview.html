@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{{ overview.title }}{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Guided repo tour</span>
+    <h1>{{ overview.title }}</h1>
+    <p class="lede">{{ overview.intro }}</p>
+    <div class="stats" aria-label="Portal summary">
+      <div class="stat">
+        <span class="kicker">Modules</span>
+        <strong>{{ module_count }}</strong>
+        <span>Curated places to read first.</span>
+      </div>
+      <div class="stat">
+        <span class="kicker">Flows</span>
+        <strong>{{ flow_count }}</strong>
+        <span>Request and app behavior narratives.</span>
+      </div>
+      <div class="stat">
+        <span class="kicker">Terms</span>
+        <strong>{{ glossary_count }}</strong>
+        <span>Quick definitions for backend vocabulary.</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>How to use this portal</h2>
+        <p>Start with the overview, then read modules in the order the app wires them together.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <ul class="bullet-list">
+        {% for note in overview.high_level_notes %}
+          <li>{{ note }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Core modules</h2>
+        <p>Each page explains what the module does, why it exists, when it runs, and where it connects.</p>
+      </div>
+    </div>
+    <div class="card-grid">
+      {% for module_page in featured_modules %}
+        <article class="panel">
+          <span class="kicker">Module</span>
+          <h3><a href="/__learn/modules/{{ module_page.slug }}">{{ module_page.title }}</a></h3>
+          <p>{{ module_page.summary }}</p>
+          <p><strong>When it runs:</strong> {{ module_page.when_it_runs }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Guided flows</h2>
+        <p>Read these when you want execution order, starting with startup wiring and then moving into request-time behavior.</p>
+      </div>
+    </div>
+    <div class="card-grid">
+      {% for flow_page in featured_flows %}
+        <article class="panel">
+          <span class="kicker">Flow</span>
+          <h3><a href="/__learn/flows/{{ flow_page.slug }}">{{ flow_page.title }}</a></h3>
+          <p>{{ flow_page.summary }}</p>
+          <div class="card-actions">
+            <a class="cta-link" href="/__learn/flows/{{ flow_page.slug }}">
+              Open flow
+            </a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Glossary</h2>
+        <p>Use this as a quick reference when a backend term shows up before it feels familiar.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <p>
+        Open the <a href="/__learn/glossary">glossary page</a> for short,
+        repo-specific definitions of terms like middleware, router, request ID,
+        and startup.
+      </p>
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{{ flow_page.title }} | FitCoach AI Learn{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Flow page</span>
+    <h1>{{ flow_page.title }}</h1>
+    <p class="lede">{{ flow_page.summary }}</p>
+    <p><strong>Why it matters:</strong> {{ flow_page.why_it_matters }}</p>
+    <p><strong>When to read it:</strong> {{ flow_page.when_to_read }}</p>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Current flow walkthrough</h2>
+        <p>This walkthrough is curated against the app wiring in the current repo, not a generated guess.</p>
+      </div>
+    </div>
+    <ol class="timeline">
+      {% for step in flow_page.steps %}
+        <li class="timeline-step">
+          <strong>Step {{ loop.index }}</strong>
+          <h3>{{ step.title }}</h3>
+          <p>{{ step.description }}</p>
+          {% if step.module_path %}
+            <p><span class="kicker">Module</span><code>{{ step.module_path }}</code></p>
+          {% endif %}
+          {% if step.python_path %}
+            <p><span class="kicker">Function</span><code>{{ step.python_path }}</code></p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Related modules</h2>
+        <p>Use these pages if you want the source-level explanation behind the modules named in this walkthrough.</p>
+      </div>
+    </div>
+    <ul class="tag-list">
+      {% for related_module in related_modules %}
+        <li>
+          <a href="/__learn/modules/{{ related_module.slug }}">{{ related_module.title }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endblock %}
