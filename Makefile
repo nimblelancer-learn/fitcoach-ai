@@ -27,7 +27,7 @@ run:
 	cd $(BACKEND_DIR) && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port $(PORT)
 
 test:
-	cd $(BACKEND_DIR) && uv run pytest
+	cd $(BACKEND_DIR) && uv run python -m pytest $(TEST) $(PYTEST_ARGS)
 
 lint:
 	cd $(BACKEND_DIR) && uv run ruff check .
