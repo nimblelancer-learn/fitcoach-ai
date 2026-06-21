@@ -2,15 +2,16 @@ title = "FitCoach AI backend learning portal"
 intro = "This internal portal explains the current FastAPI backend in guided notes so you can learn the repo from the running app, not just from source files."
 high_level_notes = [
   "Start with app.main to see the app assembly order, then read the startup lifecycle flow before switching to request-time behavior.",
+  "The startup path now depends on app.core.settings and the FastAPI lifespan hook, so those pages explain why configuration is resolved once before requests begin.",
   "The content is curated and validated against real Python modules and key functions so it fails loudly when references drift.",
   "Pages focus on module intent and a few important functions instead of trying to document every symbol in the codebase.",
 ]
 featured_modules = [
   "app-main",
+  "core-settings",
+  "learning-loader",
   "routes-health",
   "request-logging",
-  "core-errors",
-  "core-logging",
 ]
 featured_flows = [
   "startup-lifecycle",

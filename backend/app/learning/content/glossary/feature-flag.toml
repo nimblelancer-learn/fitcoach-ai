@@ -1,0 +1,5 @@
+slug = "feature-flag"
+term = "Feature flag"
+definition = "A configuration switch that turns behavior on or off without changing the code path itself. Here it controls whether the dev learning portal is available."
+why_it_matters_in_repo = "ENABLE_DEV_LEARNING_PORTAL decides whether startup loads the portal content and whether the internal /__learn routes render real pages or a disabled response."
+related_modules = ["core-settings", "app-main", "routes-learning"]

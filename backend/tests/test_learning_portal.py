@@ -41,6 +41,8 @@ async def test_learning_overview_renders_when_enabled(
     assert response.status_code == 200
     assert "FitCoach AI backend learning portal" in response.text
     assert "app.main" in response.text
+    assert "app.core.settings" in response.text
+    assert "app.learning.loader" in response.text
     assert "Startup lifecycle" in response.text
     assert "Request lifecycle" in response.text
     assert 'href="/__learn/flows/startup-lifecycle"' in response.text
@@ -66,6 +68,21 @@ async def test_learning_module_detail_renders_when_enabled(
 
 
 @pytest.mark.anyio
+async def test_learning_core_settings_module_detail_renders_when_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ENABLE_DEV_LEARNING_PORTAL", "true")
+
+    response = await _get(create_app(), "/__learn/modules/core-settings")
+
+    assert response.status_code == 200
+    assert "environment-backed Settings object" in response.text
+    assert "app.core.settings.get_settings" in response.text
+    assert "/__learn/glossary#feature-flag" in response.text
+    assert "/__learn/glossary#app-state" in response.text
+
+
+@pytest.mark.anyio
 async def test_learning_startup_flow_renders_when_enabled(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -77,6 +94,7 @@ async def test_learning_startup_flow_renders_when_enabled(
     assert "Startup lifecycle" in response.text
     assert "app.core.settings.get_settings" in response.text
     assert "load_learning_portal()" in response.text
+    assert "request.app.state.learning_portal" in response.text
     assert "Current flow walkthrough" in response.text
 
 
@@ -104,6 +122,9 @@ async def test_learning_glossary_renders_when_enabled(
     assert "Backend terms used in this repo" in response.text
     assert "Middleware" in response.text
     assert "Request ID" in response.text
+    assert "Feature flag" in response.text
+    assert "App state" in response.text
+    assert "Lifespan" in response.text
     assert "Why this matters here:" in response.text
 
 

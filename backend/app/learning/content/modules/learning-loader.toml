@@ -1,0 +1,37 @@
+slug = "learning-loader"
+title = "app.learning.loader"
+module_path = "app.learning.loader"
+summary = "Loads the curated TOML files for the learning portal, validates their schema and Python references, and returns one in-memory content object."
+why_it_exists = "This module keeps the portal trustworthy by failing early when content drifts away from the real code."
+when_it_runs = "During startup when the learning portal feature flag is enabled."
+dependencies = [
+  "tomllib for parsing the curated TOML files.",
+  "Pydantic models from app.learning.models for content validation.",
+  "importlib.import_module to verify referenced modules and Python paths exist.",
+]
+used_by = [
+  "app.main.startup calls load_learning_portal() once and stores the result on app.state.learning_portal.",
+  "Tests use this module directly to assert that bad references fail clearly.",
+]
+safe_edit_notes = [
+  "Preserve the fail-fast validation behavior because silent drift would make the portal unreliable for new contributors.",
+  "If you add a new content type or reference rule, update both loader validation and focused tests together.",
+]
+related_modules = [
+  "app-main",
+  "core-settings",
+  "routes-learning",
+]
+related_flows = ["startup-lifecycle"]
+
+[[key_functions]]
+name = "load_learning_portal"
+python_path = "app.learning.loader.load_learning_portal"
+summary = "Loads overview, module, flow, and glossary content, then validates all cross-references before returning the portal object."
+why_it_matters = "This is the single startup entry point that turns a set of TOML files into the content the portal can safely render."
+
+[[key_functions]]
+name = "_validate_references"
+python_path = "app.learning.loader._validate_references"
+summary = "Checks that module paths, python paths, related slugs, and featured items all point to real code or existing content."
+why_it_matters = "It explains exactly how the portal protects itself from outdated links and renamed symbols."

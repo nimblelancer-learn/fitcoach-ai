@@ -1,0 +1,37 @@
+slug = "routes-learning"
+title = "app.api.routes_learning"
+module_path = "app.api.routes_learning"
+summary = "Defines the internal learning portal routes and renders curated HTML pages from the content loaded at startup."
+why_it_exists = "The learning portal needs a thin route layer that turns validated learning content into beginner-friendly pages without mixing that logic into app.main."
+when_it_runs = "When FastAPI dispatches requests under /__learn after the feature flag is enabled and the portal content has been loaded."
+dependencies = [
+  "FastAPI APIRouter and Request objects for internal route handling.",
+  "Jinja2Templates for rendering the HTML pages in app.learning.templates.",
+  "request.app.state.settings and request.app.state.learning_portal for feature-flag and content access.",
+]
+used_by = [
+  "app.main includes this router so the /__learn pages become part of the application.",
+  "Developers use these routes to read the curated backend walkthrough from the running app.",
+]
+safe_edit_notes = [
+  "Keep these routes internal and hidden from OpenAPI because they are a developer aid, not a public product surface.",
+  "Prefer small context-building helpers here instead of moving validation logic out of app.learning.loader.",
+]
+related_modules = [
+  "app-main",
+  "core-settings",
+  "learning-loader",
+]
+related_flows = ["startup-lifecycle"]
+
+[[key_functions]]
+name = "_get_learning_portal"
+python_path = "app.api.routes_learning._get_learning_portal"
+summary = "Checks whether the feature flag is enabled and returns the startup-loaded portal content from app state."
+why_it_matters = "This helper shows how the route layer stays small by reusing startup-loaded state instead of reading files per request."
+
+[[key_functions]]
+name = "learning_overview"
+python_path = "app.api.routes_learning.learning_overview"
+summary = "Renders the overview page with the featured modules, flows, and portal counts."
+why_it_matters = "It is the simplest route to inspect when learning how the portal turns curated content into HTML."

@@ -1,0 +1,5 @@
+slug = "lifespan"
+term = "Lifespan"
+definition = "FastAPI's startup and shutdown context for one-time application work. In this repo it is the path that awaits startup(app) before requests are served."
+why_it_matters_in_repo = "The learning portal loads through the lifespan hook, so understanding this term makes it clear why content is validated once at boot instead of on every request."
+related_modules = ["app-main", "learning-loader"]

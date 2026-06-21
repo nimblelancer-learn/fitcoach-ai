@@ -1,0 +1,37 @@
+slug = "core-settings"
+title = "app.core.settings"
+module_path = "app.core.settings"
+summary = "Defines the environment-backed Settings object and caches the resolved configuration for the current process."
+why_it_exists = "This module gives the app one clear place to read runtime flags and avoids scattering environment lookups across startup and route code."
+when_it_runs = "During application creation when create_app() resolves settings, and later whenever code reuses the cached settings object."
+dependencies = [
+  "pydantic-settings BaseSettings for environment-backed configuration.",
+  "functools.lru_cache so repeated get_settings() calls return the same Settings instance.",
+]
+used_by = [
+  "app.main calls get_settings() before building the FastAPI app.",
+  "app.state.settings stores the resolved Settings object so startup and routes can reuse it.",
+  "app.api.routes_learning checks the feature flag through request.app.state.settings.",
+]
+safe_edit_notes = [
+  "Keep field names aligned with the environment variable contract because changing them can silently disable settings overrides.",
+  "If you add a new setting that affects startup behavior, update the startup flow so the one-time boot path stays accurate.",
+]
+related_modules = [
+  "app-main",
+  "routes-learning",
+  "learning-loader",
+]
+related_flows = ["startup-lifecycle"]
+
+[[key_functions]]
+name = "Settings"
+python_path = "app.core.settings.Settings"
+summary = "Declares the repo's runtime configuration fields and how environment values are loaded."
+why_it_matters = "A beginner can inspect this class to see which flags and configuration values the app currently expects."
+
+[[key_functions]]
+name = "get_settings"
+python_path = "app.core.settings.get_settings"
+summary = "Builds and caches the Settings object used by the rest of the application."
+why_it_matters = "This function explains why the app resolves configuration once and then reuses the same object everywhere else."

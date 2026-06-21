@@ -1,0 +1,5 @@
+slug = "app-state"
+term = "App state"
+definition = "A place to attach shared runtime objects to the FastAPI application instance so multiple parts of the app can reuse them."
+why_it_matters_in_repo = "This repo stores the resolved settings and the loaded learning portal on app.state, which keeps startup, route handlers, and feature-flag checks aligned around the same in-memory objects."
+related_modules = ["app-main", "core-settings", "routes-learning"]

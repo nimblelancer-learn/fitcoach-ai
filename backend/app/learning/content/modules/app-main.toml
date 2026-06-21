@@ -7,9 +7,11 @@ when_it_runs = "When the ASGI server imports the application module and when Fas
 dependencies = [
   "FastAPI for app construction and startup hooks.",
   "app.core.logging.setup_logging to configure log formatting early.",
+  "app.core.settings.get_settings to resolve feature flags before the app is shared.",
   "app.core.errors.register_exception_handlers to keep failures consistent.",
   "app.middleware.request_logging.request_logging_middleware to stamp and log every request.",
   "app.api.routes_health and app.api.routes_learning for route registration.",
+  "app.learning.loader.load_learning_portal for startup-time portal validation.",
 ]
 used_by = [
   "The ASGI server imports app.main:app to serve requests.",
@@ -18,10 +20,14 @@ used_by = [
 safe_edit_notes = [
   "Keep the app wiring shallow and readable so new contributors can trace startup without jumping across many files.",
   "When adding global behavior, prefer explicit registration in create_app() over hidden side effects.",
+  "If you change app.state fields or the feature-flag check, update the related settings and glossary pages so the startup story stays coherent.",
   "If you change startup loading, update the startup lifecycle flow page because it describes the current boot path.",
 ]
 related_modules = [
+  "core-settings",
   "routes-health",
+  "routes-learning",
+  "learning-loader",
   "request-logging",
   "core-errors",
   "core-logging",

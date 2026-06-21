@@ -5,6 +5,9 @@ why_it_matters = "This flow shows which decisions happen once at startup, which 
 when_to_read = "Read this after app.main if you want a clear execution order for logging, settings, app wiring, and startup-time portal validation."
 related_modules = [
   "app-main",
+  "core-settings",
+  "learning-loader",
+  "routes-learning",
   "core-logging",
   "request-logging",
   "core-errors",
@@ -70,6 +73,12 @@ title = "The learning portal loads and validates only when the flag is enabled"
 description = "startup(app) checks app.state.settings.enable_dev_learning_portal and only then calls load_learning_portal(), which reads the curated TOML files, validates module and function references, and stores the result on app.state.learning_portal."
 module_path = "app.learning.loader"
 python_path = "app.learning.loader.load_learning_portal"
+
+[[steps]]
+title = "Internal learning routes reuse the startup-loaded state"
+description = "After startup succeeds, the /__learn routes read request.app.state.settings and request.app.state.learning_portal so each request can render pages without touching the filesystem again."
+module_path = "app.api.routes_learning"
+python_path = "app.api.routes_learning._get_learning_portal"
 
 [[steps]]
 title = "Startup logs the final portal state"
