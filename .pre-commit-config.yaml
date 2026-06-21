@@ -1,0 +1,18 @@
+default_stages: [pre-commit]
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff lint
+        language: system
+        entry: uv run --project backend ruff check --fix backend
+        pass_filenames: false
+        files: ^backend/.*\.py$
+
+      - id: ruff-format
+        name: Ruff format
+        language: system
+        entry: uv run --project backend ruff format backend
+        pass_filenames: false
+        files: ^backend/.*\.py$

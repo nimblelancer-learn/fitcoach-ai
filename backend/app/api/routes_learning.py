@@ -44,14 +44,8 @@ async def learning_overview(request: Request) -> HTMLResponse:
     if portal is None:
         return _render_disabled_page(request)
 
-    featured_modules = [
-        portal.modules[slug]
-        for slug in portal.overview.featured_modules
-    ]
-    featured_flows = [
-        portal.flows[slug]
-        for slug in portal.overview.featured_flows
-    ]
+    featured_modules = [portal.modules[slug] for slug in portal.overview.featured_modules]
+    featured_flows = [portal.flows[slug] for slug in portal.overview.featured_flows]
 
     return templates.TemplateResponse(
         request=request,
@@ -95,20 +89,10 @@ async def learning_module_detail(
             status_code=404,
         )
 
-    related_modules = [
-        portal.modules[related_slug]
-        for related_slug in module_page.related_modules
-    ]
-    related_flows = [
-        portal.flows[related_slug]
-        for related_slug in module_page.related_flows
-    ]
+    related_modules = [portal.modules[related_slug] for related_slug in module_page.related_modules]
+    related_flows = [portal.flows[related_slug] for related_slug in module_page.related_flows]
     related_glossary_entries = sorted(
-        [
-            entry
-            for entry in portal.glossary.values()
-            if module_page.slug in entry.related_modules
-        ],
+        [entry for entry in portal.glossary.values() if module_page.slug in entry.related_modules],
         key=lambda entry: entry.term.lower(),
     )
 
@@ -152,10 +136,7 @@ async def learning_flow_detail(
             status_code=404,
         )
 
-    related_modules = [
-        portal.modules[related_slug]
-        for related_slug in flow_page.related_modules
-    ]
+    related_modules = [portal.modules[related_slug] for related_slug in flow_page.related_modules]
 
     return templates.TemplateResponse(
         request=request,
@@ -184,10 +165,7 @@ async def learning_glossary(request: Request) -> HTMLResponse:
     )
 
     related_modules = {
-        entry.slug: [
-            portal.modules[related_slug]
-            for related_slug in entry.related_modules
-        ]
+        entry.slug: [portal.modules[related_slug] for related_slug in entry.related_modules]
         for entry in glossary_entries
     }
 

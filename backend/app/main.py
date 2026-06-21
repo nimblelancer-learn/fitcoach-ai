@@ -1,6 +1,6 @@
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-import logging
 
 from fastapi import FastAPI
 
@@ -22,8 +22,7 @@ async def startup(app: FastAPI) -> None:
         app.state.learning_portal = load_learning_portal()
 
     logger.info(
-        "application_started name=fitcoach-ai-api "
-        "dev_learning_portal_enabled=%s",
+        "application_started name=fitcoach-ai-api dev_learning_portal_enabled=%s",
         settings.enable_dev_learning_portal,
     )
 

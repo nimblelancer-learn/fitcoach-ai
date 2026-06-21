@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import tomllib
 from importlib import import_module
 from pathlib import Path
-import tomllib
 from typing import Any
 
 from pydantic import ValidationError
@@ -148,15 +148,13 @@ def _validate_references(portal: LearningPortalContent) -> None:
     for featured_module in portal.overview.featured_modules:
         if featured_module not in portal.modules:
             raise LearningContentError(
-                f"Unknown featured module slug '{featured_module}' "
-                "referenced by overview",
+                f"Unknown featured module slug '{featured_module}' referenced by overview",
             )
 
     for featured_flow in portal.overview.featured_flows:
         if featured_flow not in portal.flows:
             raise LearningContentError(
-                f"Unknown featured flow slug '{featured_flow}' "
-                "referenced by overview",
+                f"Unknown featured flow slug '{featured_flow}' referenced by overview",
             )
 
     for glossary_entry in portal.glossary.values():

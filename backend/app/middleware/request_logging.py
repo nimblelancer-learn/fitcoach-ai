@@ -26,10 +26,7 @@ async def request_logging_middleware(
     response.headers["X-Request-ID"] = request_id
 
     logger.info(
-        (
-            "request_completed request_id=%s method=%s "
-            "path=%s status=%s duration_ms=%.2f"
-        ),
+        ("request_completed request_id=%s method=%s path=%s status=%s duration_ms=%.2f"),
         request_id,
         request.method,
         request.url.path,
