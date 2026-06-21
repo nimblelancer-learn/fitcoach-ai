@@ -1,0 +1,22 @@
+@baseUrl = http://127.0.0.1:8000
+
+### Check API health
+GET {{baseUrl}}/health
+Accept: application/json
+
+###
+
+### Get the generated OpenAPI document
+GET {{baseUrl}}/openapi.json
+Accept: application/json
+
+###
+
+### Verify the global 404 error format
+GET {{baseUrl}}/does-not-exist
+Accept: application/json
+
+###
+
+### View Swagger UI
+GET {{baseUrl}}/docs

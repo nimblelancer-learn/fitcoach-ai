@@ -1,0 +1,5 @@
+slug = "middleware"
+term = "Middleware"
+definition = "Code that wraps every HTTP request before and after the route handler runs. In this repo it adds a request ID, times the request, and logs the result."
+why_it_matters_in_repo = "If you want to understand the current request lifecycle, this is one of the first terms to learn because request IDs, duration measurement, and request completion logs all pass through the request logging middleware."
+related_modules = ["request-logging", "app-main"]

@@ -1,0 +1,28 @@
+slug = "core-logging"
+title = "app.core.logging"
+module_path = "app.core.logging"
+summary = "Configures root and Uvicorn logging so application logs share a readable format."
+why_it_exists = "A central logging setup gives the backend a consistent baseline before more features arrive."
+when_it_runs = "During application creation before requests start flowing."
+dependencies = [
+  "Python logging.dictConfig for declarative logger setup.",
+  "stdout console output for local development and simple deployments.",
+]
+used_by = [
+  "app.main calls setup_logging() before constructing the FastAPI app.",
+]
+safe_edit_notes = [
+  "Prefer small, explicit log formatting changes here instead of scattering logger configuration across modules.",
+  "If you alter logger names or propagation, verify that request logs and startup logs still appear once.",
+]
+related_modules = ["app-main", "request-logging"]
+related_flows = [
+  "startup-lifecycle",
+  "request-lifecycle",
+]
+
+[[key_functions]]
+name = "setup_logging"
+python_path = "app.core.logging.setup_logging"
+summary = "Applies the logging configuration for the app and Uvicorn loggers."
+why_it_matters = "It decides what operational information a developer sees while learning and debugging the backend."

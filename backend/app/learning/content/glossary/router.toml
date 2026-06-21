@@ -1,0 +1,5 @@
+slug = "router"
+term = "Router"
+definition = "A grouped set of route declarations. FastAPI lets the app include routers so endpoint definitions stay separated by concern instead of piling up in app.main."
+why_it_matters_in_repo = "The backend is still small, so routers are one of the clearest ways to see how app.main assembles public and internal endpoints without burying route logic in the startup file."
+related_modules = ["routes-health", "app-main"]

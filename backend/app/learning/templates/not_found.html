@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Not Found | FitCoach AI Learn{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Missing page</span>
+    <h1>{{ item_type|title }} not found</h1>
+    <p class="lede">
+      No learning page exists for <code>{{ slug }}</code>.
+    </p>
+    <div class="panel">
+      <p>
+        Return to <a href="{{ return_path }}">the portal overview</a> and pick
+        one of the curated pages.
+      </p>
+    </div>
+  </section>
+{% endblock %}

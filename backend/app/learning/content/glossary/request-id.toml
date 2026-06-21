@@ -1,0 +1,5 @@
+slug = "request-id"
+term = "Request ID"
+definition = "A unique identifier attached to a request and echoed back in the response. It helps connect logs and error payloads that belong to the same request."
+why_it_matters_in_repo = "This repo already uses the same request ID in middleware logs and structured error responses, so it is the easiest way to trace one failing request end-to-end while debugging."
+related_modules = ["request-logging", "core-errors"]

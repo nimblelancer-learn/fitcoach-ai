@@ -1,0 +1,27 @@
+slug = "routes-health"
+title = "app.api.routes_health"
+module_path = "app.api.routes_health"
+summary = "Defines the health check endpoint used to verify that the API process is alive and responding."
+why_it_exists = "A small route like this provides a stable example of how this repo exposes FastAPI endpoints."
+when_it_runs = "When FastAPI dispatches a GET request to /health."
+dependencies = [
+  "FastAPI APIRouter for route declaration.",
+]
+used_by = [
+  "app.main includes this router so the endpoint becomes part of the application.",
+]
+safe_edit_notes = [
+  "Keep this route lightweight and dependency-free because it is often the first endpoint used for smoke checks.",
+  "If the response contract changes, update any operational checks that expect the current shape.",
+]
+related_modules = ["app-main"]
+related_flows = [
+  "startup-lifecycle",
+  "request-lifecycle",
+]
+
+[[key_functions]]
+name = "health_check"
+python_path = "app.api.routes_health.health_check"
+summary = "Returns a simple JSON payload that marks the API as healthy."
+why_it_matters = "It is the easiest route to trace through middleware, routing, and response handling."

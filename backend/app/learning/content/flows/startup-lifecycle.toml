@@ -1,0 +1,78 @@
+slug = "startup-lifecycle"
+title = "Startup lifecycle"
+summary = "Explains the current boot path from process import through FastAPI startup and the optional learning portal load."
+why_it_matters = "This flow shows which decisions happen once at startup, which helps a beginner separate boot wiring from per-request behavior."
+when_to_read = "Read this after app.main if you want a clear execution order for logging, settings, app wiring, and startup-time portal validation."
+related_modules = [
+  "app-main",
+  "core-logging",
+  "request-logging",
+  "core-errors",
+  "routes-health",
+]
+
+[[steps]]
+title = "Importing app.main begins the application assembly path"
+description = "The ASGI server imports app.main, and the module-level app = create_app() call kicks off the current boot sequence immediately."
+module_path = "app.main"
+python_path = "app.main.create_app"
+
+[[steps]]
+title = "Logging is configured before the app is constructed"
+description = "create_app() calls setup_logging() first so startup logs, request logs, and Uvicorn logs all share the same formatter from the beginning of the process."
+module_path = "app.core.logging"
+python_path = "app.core.logging.setup_logging"
+
+[[steps]]
+title = "Settings are resolved once for this app instance"
+description = "create_app() calls get_settings(), which reads environment-backed Settings values and returns the cached settings object used to decide whether the dev learning portal should be enabled."
+module_path = "app.core.settings"
+python_path = "app.core.settings.get_settings"
+
+[[steps]]
+title = "FastAPI is created with the lifespan hook attached"
+description = "create_app() constructs the FastAPI instance and passes lifespan=lifespan, which is how this repo schedules startup(app) to run before serving requests."
+module_path = "app.main"
+python_path = "app.main.lifespan"
+
+[[steps]]
+title = "Application state stores the resolved settings"
+description = "Right after construction, create_app() saves the settings object on app.state.settings so later startup and route code can reuse the same configuration without re-reading the environment."
+module_path = "app.main"
+python_path = "app.main.create_app"
+
+[[steps]]
+title = "Global middleware is registered for all HTTP requests"
+description = "create_app() registers request_logging_middleware with app.middleware('http'), which means request IDs and completion logs wrap every request once the app starts serving traffic."
+module_path = "app.middleware.request_logging"
+python_path = "app.middleware.request_logging.request_logging_middleware"
+
+[[steps]]
+title = "Exception handlers are registered before routes run"
+description = "create_app() calls register_exception_handlers(app) so expected errors, validation failures, HTTP errors, and unexpected exceptions all normalize to the shared JSON error format."
+module_path = "app.core.errors"
+python_path = "app.core.errors.register_exception_handlers"
+
+[[steps]]
+title = "Routers are included in the application"
+description = "create_app() includes both the public health router and the internal learning router so those endpoints become part of the app before startup completes."
+module_path = "app.api.routes_health"
+python_path = "app.api.routes_health.health_check"
+
+[[steps]]
+title = "The lifespan startup path runs before requests are served"
+description = "When FastAPI enters the lifespan context, lifespan(app) awaits startup(app), which is the repo's explicit place for one-time startup work."
+module_path = "app.main"
+python_path = "app.main.startup"
+
+[[steps]]
+title = "The learning portal loads and validates only when the flag is enabled"
+description = "startup(app) checks app.state.settings.enable_dev_learning_portal and only then calls load_learning_portal(), which reads the curated TOML files, validates module and function references, and stores the result on app.state.learning_portal."
+module_path = "app.learning.loader"
+python_path = "app.learning.loader.load_learning_portal"
+
+[[steps]]
+title = "Startup logs the final portal state"
+description = "After the optional portal load, startup(app) logs whether the dev learning portal is enabled so a developer can confirm the final boot configuration in the process logs."
+module_path = "app.main"
+python_path = "app.main.startup"

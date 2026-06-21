@@ -1,0 +1,5 @@
+slug = "startup"
+term = "Startup"
+definition = "The app initialization phase that runs before serving requests. In this repo it is where the learning portal content is loaded and validated when the feature flag is enabled."
+why_it_matters_in_repo = "Learning content is validated during startup, so incorrect module or function references fail early here instead of becoming silent drift that only shows up later while reading the portal."
+related_modules = ["app-main"]

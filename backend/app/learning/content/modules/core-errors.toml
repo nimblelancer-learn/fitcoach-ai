@@ -1,0 +1,36 @@
+slug = "core-errors"
+title = "app.core.errors"
+module_path = "app.core.errors"
+summary = "Defines the application error shape and centralizes handlers for expected errors, validation failures, HTTP errors, and unexpected exceptions."
+why_it_exists = "A single error module keeps response formatting consistent and makes failure behavior easier to learn."
+when_it_runs = "Whenever request validation fails, an HTTP exception is raised, an AppError is raised, or an unexpected exception escapes a route."
+dependencies = [
+  "FastAPI and Starlette exception hooks.",
+  "request.state.request_id set by the request logging middleware.",
+  "jsonable_encoder and JSONResponse for structured API errors.",
+]
+used_by = [
+  "app.main registers the handlers at startup.",
+  "Any future route or service code can raise AppError to opt into the common error envelope.",
+]
+safe_edit_notes = [
+  "Keep the error response envelope stable because clients and logs may rely on code, message, details, and request_id.",
+  "If you add a new handler, make sure it still preserves the request ID for debugging.",
+]
+related_modules = ["app-main", "request-logging"]
+related_flows = [
+  "startup-lifecycle",
+  "request-lifecycle",
+]
+
+[[key_functions]]
+name = "create_error_response"
+python_path = "app.core.errors.create_error_response"
+summary = "Builds the shared JSON error payload used by the handlers in this module."
+why_it_matters = "It keeps the shape of API failures consistent across multiple exception types."
+
+[[key_functions]]
+name = "register_exception_handlers"
+python_path = "app.core.errors.register_exception_handlers"
+summary = "Attaches all exception handlers to the FastAPI application."
+why_it_matters = "This is the entry point that turns the module from helper code into active application behavior."
