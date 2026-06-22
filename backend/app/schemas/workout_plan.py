@@ -58,12 +58,11 @@ class SafetyWarning(SchemaBase):
     )
 
     applies_to_exercise: str | None = Field(
-        default=None,
         min_length=1,
         max_length=120,
     )
 
-    requires_professional_clearance: bool = False
+    requires_professional_clearance: bool
 
     @model_validator(mode="after")
     def medical_referral_requires_clearance(self) -> "SafetyWarning":
@@ -101,25 +100,21 @@ class ExerciseItem(SchemaBase):
     )
 
     reps_min: int | None = Field(
-        default=None,
         ge=1,
         le=100,
     )
 
     reps_max: int | None = Field(
-        default=None,
         ge=1,
         le=100,
     )
 
     duration_seconds: int | None = Field(
-        default=None,
         ge=15,
         le=3600,
     )
 
     rest_seconds: int | None = Field(
-        default=None,
         ge=0,
         le=600,
     )
@@ -137,12 +132,10 @@ class ExerciseItem(SchemaBase):
     )
 
     safety_notes: list[ShortText] = Field(
-        default_factory=list,
         max_length=5,
     )
 
     alternatives: list[ShortText] = Field(
-        default_factory=list,
         max_length=3,
     )
 
@@ -235,7 +228,6 @@ class WorkoutPlan(SchemaBase):
     )
 
     duration_weeks: int = Field(
-        default=4,
         ge=1,
         le=12,
     )
@@ -251,7 +243,6 @@ class WorkoutPlan(SchemaBase):
     )
 
     safety_warnings: list[SafetyWarning] = Field(
-        default_factory=list,
         max_length=10,
     )
 

@@ -4,13 +4,16 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.routes_generate import router as generate_router
 from app.api.routes_health import router as health_router
 from app.api.routes_learning import router as learning_router
 from app.core.errors import register_exception_handlers
 from app.core.logging import setup_logging
 from app.core.settings import get_settings
 from app.learning.loader import load_learning_portal
+from app.llm.openai_client import OpenAIWorkoutPlanClient
 from app.middleware.request_logging import request_logging_middleware
+from app.services import WorkoutPlanGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +49,12 @@ def create_app() -> FastAPI:
     )
 
     app.state.settings = settings
+    app.state.workout_plan_generator = WorkoutPlanGenerator(OpenAIWorkoutPlanClient(settings))
 
     app.middleware("http")(request_logging_middleware)
     register_exception_handlers(app)
 
+    app.include_router(generate_router)
     app.include_router(health_router)
     app.include_router(learning_router)
 

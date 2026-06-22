@@ -36,6 +36,7 @@ def valid_exercise_payload() -> dict:
         "sets": 3,
         "reps_min": 8,
         "reps_max": 10,
+        "duration_seconds": None,
         "rest_seconds": 90,
         "intensity": "moderate",
         "target_muscles": [
@@ -52,6 +53,29 @@ def valid_exercise_payload() -> dict:
         "alternatives": [
             "Box squat",
         ],
+    }
+
+
+def valid_duration_exercise_payload() -> dict:
+    return {
+        "name": "March in Place",
+        "category": "cardio",
+        "prescription_type": "duration",
+        "sets": 2,
+        "reps_min": None,
+        "reps_max": None,
+        "duration_seconds": 180,
+        "rest_seconds": None,
+        "intensity": "low",
+        "target_muscles": [
+            "calves",
+            "hip flexors",
+        ],
+        "instructions": [
+            "Keep a steady pace.",
+        ],
+        "safety_notes": [],
+        "alternatives": [],
     }
 
 
@@ -91,6 +115,8 @@ def valid_plan_payload() -> dict:
                 "severity": "caution",
                 "message": ("Keep controlled form; stop the movement if sharp pain occurs."),
                 "recommended_action": ("Reduce range of motion or choose the listed alternative."),
+                "applies_to_exercise": None,
+                "requires_professional_clearance": False,
             }
         ],
     }
@@ -177,9 +203,60 @@ def test_medical_referral_warning_requires_clearance() -> None:
             "severity": "stop",
             "message": ("A clinician should assess this issue before training."),
             "recommended_action": ("Pause the plan and seek professional guidance."),
+            "applies_to_exercise": None,
             "requires_professional_clearance": False,
         }
     ]
+
+    with pytest.raises(ValidationError):
+        WorkoutPlan.model_validate(payload)
+
+
+def test_duration_exercise_accepts_required_null_keys() -> None:
+    exercise = ExerciseItem.model_validate(valid_duration_exercise_payload())
+
+    assert exercise.reps_min is None
+    assert exercise.reps_max is None
+    assert exercise.rest_seconds is None
+
+
+def test_workout_plan_schema_marks_structured_output_fields_as_required() -> None:
+    schema = WorkoutPlan.model_json_schema()
+    required = set(schema["required"])
+
+    assert "duration_weeks" in required
+    assert "safety_warnings" in required
+
+
+def test_exercise_item_schema_marks_structured_output_fields_as_required() -> None:
+    schema = ExerciseItem.model_json_schema()
+    required = set(schema["required"])
+
+    assert "duration_seconds" in required
+    assert "rest_seconds" in required
+    assert "safety_notes" in required
+    assert "alternatives" in required
+
+
+def test_workout_plan_rejects_missing_required_structured_output_fields() -> None:
+    payload = valid_plan_payload()
+    del payload["safety_warnings"]
+
+    with pytest.raises(ValidationError):
+        WorkoutPlan.model_validate(payload)
+
+
+def test_safety_warning_rejects_unknown_fields() -> None:
+    payload = valid_plan_payload()
+    payload["safety_warnings"][0]["unexpected_key"] = "must not be accepted"
+
+    with pytest.raises(ValidationError):
+        WorkoutPlan.model_validate(payload)
+
+
+def test_workout_plan_rejects_whitespace_only_strings_after_stripping() -> None:
+    payload = valid_plan_payload()
+    payload["summary"] = "   "
 
     with pytest.raises(ValidationError):
         WorkoutPlan.model_validate(payload)
