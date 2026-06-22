@@ -8,6 +8,10 @@ from openai import APITimeoutError, OpenAIError
 from app.core.errors import AppError
 from app.core.settings import Settings
 from app.llm.openai_client import OpenAIWorkoutPlanClient
+from app.llm.pricing import (
+    estimate_request_cost_from_pricing_usd,
+    estimate_request_cost_usd,
+)
 from app.main import create_app
 from app.schemas import WorkoutPlan
 
@@ -88,11 +92,7 @@ def sample_messages() -> list[dict]:
         {
             "role": "user",
             "content": (
-                "goal: fat_loss\n"
-                "experience_level: beginner\n"
-                "training_days_per_week: 3\n"
-                "session_duration_minutes: 45\n"
-                "equipment: bodyweight, dumbbells"
+                "goal: fat_loss\ntraining_days_per_week: 3\nequipment: bodyweight, dumbbells"
             ),
         },
     ]
@@ -185,13 +185,39 @@ def test_get_client_requires_model() -> None:
     assert exc_info.value.code == "OPENAI_CONFIG_MISSING"
 
 
+def test_get_client_lazy_initializes_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    created_clients = []
+
+    def fake_async_openai(*, api_key: str):
+        created_clients.append(api_key)
+        return SimpleNamespace(api_key=api_key)
+
+    monkeypatch.setattr("app.llm.openai_client.AsyncOpenAI", fake_async_openai)
+
+    client = OpenAIWorkoutPlanClient(
+        Settings(
+            _env_file=None,
+            openai_api_key="test-key",
+            openai_model="gpt-4.1-mini",
+        )
+    )
+
+    first = client._get_client()
+    second = client._get_client()
+
+    assert first is second
+    assert created_clients == ["test-key"]
+
+
 @pytest.mark.asyncio
 async def test_generate_workout_plan_revalidates_parsed_model_instance() -> None:
     parsed_plan = WorkoutPlan.model_validate(valid_plan_payload())
     fake_client = FakeAsyncClient(
         result=SimpleNamespace(
+            model="gpt-4.1-mini",
             output=[],
             output_parsed=parsed_plan,
+            usage=SimpleNamespace(input_tokens=120, output_tokens=240, total_tokens=360),
         )
     )
 
@@ -208,12 +234,21 @@ async def test_generate_workout_plan_revalidates_parsed_model_instance() -> None
 
     assert isinstance(plan, WorkoutPlan)
     assert plan.title == parsed_plan.title
+    assert fake_client.responses.calls == [
+        {
+            "model": "gpt-4.1-mini",
+            "input": sample_messages(),
+            "text_format": WorkoutPlan,
+            "timeout": 20.0,
+        }
+    ]
 
 
 @pytest.mark.asyncio
 async def test_generate_workout_plan_rejects_refusal() -> None:
     fake_client = FakeAsyncClient(
         result=SimpleNamespace(
+            model="gpt-4.1-mini",
             output=[
                 SimpleNamespace(
                     type="message",
@@ -226,6 +261,7 @@ async def test_generate_workout_plan_rejects_refusal() -> None:
                 )
             ],
             output_parsed=None,
+            usage=None,
         )
     )
 
@@ -246,12 +282,12 @@ async def test_generate_workout_plan_rejects_refusal() -> None:
 
 
 @pytest.mark.asyncio
-async def test_generate_workout_plan_retries_invalid_output_then_returns_fallback() -> None:
+async def test_generate_workout_plan_rejects_missing_parsed_output() -> None:
     fake_client = FakeAsyncClient(
         sequence=[
-            SimpleNamespace(output=[], output_parsed=None),
-            SimpleNamespace(output=[], output_parsed=None),
-            SimpleNamespace(output=[], output_parsed=None),
+            SimpleNamespace(output=[], output_parsed=None, usage=None),
+            SimpleNamespace(output=[], output_parsed=None, usage=None),
+            SimpleNamespace(output=[], output_parsed=None, usage=None),
         ]
     )
 
@@ -269,6 +305,7 @@ async def test_generate_workout_plan_retries_invalid_output_then_returns_fallbac
     assert plan.title == "Fallback General Fitness Plan"
     assert plan.training_days_per_week == 3
     assert len(plan.weekly_schedule) == 3
+    assert len(fake_client.responses.calls) == 3
 
 
 @pytest.mark.asyncio
@@ -292,16 +329,17 @@ async def test_generate_workout_plan_maps_sdk_errors_to_app_error() -> None:
 
 
 @pytest.mark.asyncio
-async def test_generate_workout_plan_retries_invalid_parsed_data_then_succeeds() -> None:
+async def test_generate_workout_plan_maps_invalid_parsed_data_to_app_error() -> None:
     invalid_payload = valid_plan_payload()
     del invalid_payload["title"]
 
     fake_client = FakeAsyncClient(
         sequence=[
-            SimpleNamespace(output=[], output_parsed=invalid_payload),
+            SimpleNamespace(output=[], output_parsed=invalid_payload, usage=None),
             SimpleNamespace(
                 output=[],
                 output_parsed=WorkoutPlan.model_validate(valid_plan_payload()),
+                usage=None,
             ),
         ]
     )
@@ -318,6 +356,7 @@ async def test_generate_workout_plan_retries_invalid_parsed_data_then_succeeds()
     plan = await client.generate_workout_plan(sample_messages())
 
     assert plan.title == "3-Day Beginner Home Strength Plan"
+    assert len(fake_client.responses.calls) == 2
 
 
 @pytest.mark.asyncio
@@ -339,3 +378,87 @@ async def test_generate_workout_plan_maps_timeout_to_app_error() -> None:
 
     assert exc_info.value.status_code == 504
     assert exc_info.value.code == "OPENAI_TIMEOUT"
+
+
+@pytest.mark.asyncio
+async def test_generate_workout_plan_logs_usage_metrics(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level("INFO")
+
+    fake_client = FakeAsyncClient(
+        result=SimpleNamespace(
+            model="gpt-4.1-mini",
+            output=[],
+            output_parsed=WorkoutPlan.model_validate(valid_plan_payload()),
+            usage=SimpleNamespace(input_tokens=1000, output_tokens=500, total_tokens=1500),
+        )
+    )
+    client = OpenAIWorkoutPlanClient(
+        Settings(
+            _env_file=None,
+            openai_api_key="test-key",
+            openai_model="gpt-4.1-mini",
+            openai_input_cost_per_million_tokens_usd=0.5,
+            openai_output_cost_per_million_tokens_usd=1.5,
+        )
+    )
+    client._client = fake_client
+
+    await client.generate_workout_plan(sample_messages())
+
+    assert "openai_workout_plan_response" in caplog.text
+    assert "input_tokens=1000" in caplog.text
+    assert "output_tokens=500" in caplog.text
+    assert "estimated_cost_usd=0.00125000" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_generate_workout_plan_logs_unavailable_cost_when_model_pricing_missing(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level("INFO")
+
+    fake_client = FakeAsyncClient(
+        result=SimpleNamespace(
+            model="custom-model",
+            output=[],
+            output_parsed=WorkoutPlan.model_validate(valid_plan_payload()),
+            usage=SimpleNamespace(input_tokens=100, output_tokens=50, total_tokens=None),
+        )
+    )
+    client = OpenAIWorkoutPlanClient(
+        Settings(
+            _env_file=None,
+            openai_api_key="test-key",
+            openai_model="custom-model",
+        )
+    )
+    client._client = fake_client
+
+    await client.generate_workout_plan(sample_messages())
+
+    assert "estimated_cost_usd=unavailable" in caplog.text
+    assert "total_tokens=150" in caplog.text
+
+
+def test_estimate_request_cost_usd_returns_none_for_unknown_model() -> None:
+    assert (
+        estimate_request_cost_usd(
+            "unknown-model",
+            input_tokens=1000,
+            output_tokens=500,
+        )
+        is None
+    )
+
+
+def test_estimate_request_cost_from_pricing_usd_uses_token_counts() -> None:
+    cost = estimate_request_cost_from_pricing_usd(
+        input_tokens=1000,
+        output_tokens=500,
+        input_per_million_tokens_usd=0.5,
+        output_per_million_tokens_usd=1.5,
+    )
+
+    assert cost == pytest.approx(0.00125)
