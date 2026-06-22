@@ -13,4 +13,6 @@ Set these values in the project `.env` file before testing the live OpenAI path:
 ```bash
 OPENAI_API_KEY=...
 OPENAI_MODEL=gpt-4.1-mini
+OPENAI_TIMEOUT_SECONDS=20
+OPENAI_INVALID_OUTPUT_RETRIES=2
 ```

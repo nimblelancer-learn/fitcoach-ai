@@ -66,6 +66,18 @@ The local workout-plan generation path is:
 The app calls the OpenAI SDK directly. It does not hide the provider call behind a
 framework wrapper.
 
+## Reliability Handling
+
+The current backend adds a few basic runtime protections around the LLM call:
+
+- Invalid structured output is retried a bounded number of times
+- Timeouts are mapped to an explicit app error
+- Refusals fail fast
+- Retry exhaustion returns a conservative schema-valid fallback workout plan
+
+The fallback preserves the API contract by still returning a valid `WorkoutPlan`, which
+keeps local development and downstream consumers simpler.
+
 ## Roadmap
 
 - Setup FastAPI backend skeleton
