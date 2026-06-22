@@ -7,7 +7,15 @@ from pydantic import ValidationError
 
 from app.core.errors import AppError
 from app.core.settings import Settings
-from app.schemas import ExperienceLevel, FitnessGoal, WorkoutPlan
+from app.llm.pricing import (
+    estimate_request_cost_from_pricing_usd,
+    estimate_request_cost_usd,
+)
+from app.schemas import (
+    ExperienceLevel,
+    FitnessGoal,
+    WorkoutPlan,
+)
 from app.schemas.workout_plan import (
     ExerciseCategory,
     Intensity,
@@ -68,28 +76,49 @@ class OpenAIWorkoutPlanClient:
                     timeout=self._settings.openai_timeout_seconds,
                 )
             except APITimeoutError as exc:
-                raise _timeout_error(
-                    model=self._settings.openai_model,
-                    attempt=attempt,
-                    started_at=started_at,
-                    timeout_seconds=self._settings.openai_timeout_seconds,
-                ) from exc
-            except TimeoutError as exc:
-                raise _timeout_error(
-                    model=self._settings.openai_model,
-                    attempt=attempt,
-                    started_at=started_at,
-                    timeout_seconds=self._settings.openai_timeout_seconds,
-                ) from exc
-            except OpenAIError as exc:
+                latency_ms = _elapsed_ms(started_at)
                 logger.warning(
                     (
-                        "openai_workout_plan_request_failed model=%s attempt=%s "
-                        "latency_ms=%s error_type=%s"
+                        "openai_workout_plan_timeout model=%s attempt=%s latency_ms=%s "
+                        "timeout_seconds=%s"
                     ),
                     self._settings.openai_model,
                     attempt,
-                    _elapsed_ms(started_at),
+                    latency_ms,
+                    self._settings.openai_timeout_seconds,
+                )
+                raise AppError(
+                    status_code=504,
+                    code="OPENAI_TIMEOUT",
+                    message="The workout generation service timed out.",
+                ) from exc
+            except TimeoutError as exc:
+                latency_ms = _elapsed_ms(started_at)
+                logger.warning(
+                    (
+                        "openai_workout_plan_timeout model=%s attempt=%s latency_ms=%s "
+                        "timeout_seconds=%s"
+                    ),
+                    self._settings.openai_model,
+                    attempt,
+                    latency_ms,
+                    self._settings.openai_timeout_seconds,
+                )
+                raise AppError(
+                    status_code=504,
+                    code="OPENAI_TIMEOUT",
+                    message="The workout generation service timed out.",
+                ) from exc
+            except OpenAIError as exc:
+                latency_ms = _elapsed_ms(started_at)
+                logger.warning(
+                    (
+                        "openai_workout_plan_request_failed model=%s attempt=%s latency_ms=%s "
+                        "error_type=%s"
+                    ),
+                    self._settings.openai_model,
+                    attempt,
+                    latency_ms,
                     type(exc).__name__,
                 )
                 raise AppError(
@@ -97,6 +126,28 @@ class OpenAIWorkoutPlanClient:
                     code="OPENAI_REQUEST_FAILED",
                     message="The workout generation service request failed.",
                 ) from exc
+
+            latency_ms = _elapsed_ms(started_at)
+            usage = _extract_usage(response)
+            estimated_cost = _estimate_cost_from_settings_or_table(
+                settings=self._settings,
+                input_tokens=usage["input_tokens"],
+                output_tokens=usage["output_tokens"],
+            )
+
+            logger.info(
+                (
+                    "openai_workout_plan_response model=%s attempt=%s latency_ms=%s "
+                    "input_tokens=%s output_tokens=%s total_tokens=%s estimated_cost_usd=%s"
+                ),
+                self._settings.openai_model,
+                attempt,
+                latency_ms,
+                usage["input_tokens"],
+                usage["output_tokens"],
+                usage["total_tokens"],
+                _format_estimated_cost(estimated_cost),
+            )
 
             refusal = _extract_refusal(response)
             if refusal is not None:
@@ -112,7 +163,7 @@ class OpenAIWorkoutPlanClient:
                 )
 
             try:
-                return _validate_parsed_workout_plan(response, self._settings.openai_model)
+                return _validate_parsed_workout_plan(response)
             except AppError as exc:
                 last_invalid_output_error = exc
                 logger.warning(
@@ -153,7 +204,7 @@ def _extract_prompt_field(messages: list[dict], field_name: str) -> str | None:
     return None
 
 
-def _validate_parsed_workout_plan(response: Any, model: str) -> WorkoutPlan:
+def _validate_parsed_workout_plan(response: Any) -> WorkoutPlan:
     parsed = getattr(response, "output_parsed", None)
     if parsed is None:
         raise AppError(
@@ -170,7 +221,7 @@ def _validate_parsed_workout_plan(response: Any, model: str) -> WorkoutPlan:
     except ValidationError as exc:
         logger.warning(
             "openai_workout_plan_validation_failed model=%s error_count=%s",
-            model,
+            getattr(response, "model", None),
             len(exc.errors()),
         )
         raise AppError(
@@ -200,28 +251,61 @@ def _extract_refusal(response: Any) -> str | None:
     return None
 
 
+def _extract_usage(response: Any) -> dict[str, int | None]:
+    usage = getattr(response, "usage", None)
+    if usage is None:
+        return {
+            "input_tokens": None,
+            "output_tokens": None,
+            "total_tokens": None,
+        }
+
+    input_tokens = getattr(usage, "input_tokens", None)
+    output_tokens = getattr(usage, "output_tokens", None)
+    total_tokens = getattr(usage, "total_tokens", None)
+
+    if total_tokens is None and (isinstance(input_tokens, int) or isinstance(output_tokens, int)):
+        total_tokens = (input_tokens or 0) + (output_tokens or 0)
+
+    return {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+    }
+
+
 def _elapsed_ms(started_at: float) -> int:
     return int((perf_counter() - started_at) * 1000)
 
 
-def _timeout_error(
+def _format_estimated_cost(cost: float | None) -> str:
+    if cost is None:
+        return "unavailable"
+
+    return f"{cost:.8f}"
+
+
+def _estimate_cost_from_settings_or_table(
     *,
-    model: str,
-    attempt: int,
-    started_at: float,
-    timeout_seconds: float,
-) -> AppError:
-    logger.warning(
-        ("openai_workout_plan_timeout model=%s attempt=%s latency_ms=%s timeout_seconds=%s"),
-        model,
-        attempt,
-        _elapsed_ms(started_at),
-        timeout_seconds,
-    )
-    return AppError(
-        status_code=504,
-        code="OPENAI_TIMEOUT",
-        message="The workout generation service timed out.",
+    settings: Settings,
+    input_tokens: int | None,
+    output_tokens: int | None,
+) -> float | None:
+    if (
+        settings.openai_input_cost_per_million_tokens_usd is not None
+        and settings.openai_output_cost_per_million_tokens_usd is not None
+    ):
+        return estimate_request_cost_from_pricing_usd(
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            input_per_million_tokens_usd=settings.openai_input_cost_per_million_tokens_usd,
+            output_per_million_tokens_usd=settings.openai_output_cost_per_million_tokens_usd,
+        )
+
+    return estimate_request_cost_usd(
+        settings.openai_model,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
     )
 
 

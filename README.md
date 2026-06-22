@@ -78,6 +78,25 @@ The current backend adds a few basic runtime protections around the LLM call:
 The fallback preserves the API contract by still returning a valid `WorkoutPlan`, which
 keeps local development and downstream consumers simpler.
 
+## Basic LLM Usage Metrics
+
+Each generation request logs:
+
+- model name
+- latency in milliseconds
+- input tokens when available
+- output tokens when available
+- total tokens when available
+- estimated cost when pricing is known, otherwise `unavailable`
+
+This is intentionally lightweight. The purpose is to make local behavior observable
+before adding a full tracing or analytics stack.
+
+If you want runtime cost estimates without editing code, set:
+
+- `OPENAI_INPUT_COST_PER_MILLION_TOKENS_USD`
+- `OPENAI_OUTPUT_COST_PER_MILLION_TOKENS_USD`
+
 ## Roadmap
 
 - Setup FastAPI backend skeleton
