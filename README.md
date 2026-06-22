@@ -36,20 +36,35 @@ FitCoach AI explores how an LLM-powered assistant can generate structured and sa
 - Observability: Langfuse
 - App DB: SQLite for MVP, PostgreSQL later
 
-## Current Scope
-
-This repository is currently focused on the backend foundation and project structure.
-
 ## Local Setup
 
-Local setup instructions will be added as the backend skeleton is implemented.
-
-Planned setup steps:
+Current setup steps:
 
 1. Create a virtual environment.
-2. Install backend dependencies.
+2. Install backend dependencies with `uv sync --project backend`.
 3. Copy `.env.example` to `.env`.
-4. Run the FastAPI backend locally.
+4. Set `OPENAI_API_KEY` and `OPENAI_MODEL`.
+5. Run the FastAPI backend locally.
+
+```bash
+cd backend
+uv sync
+uv run fastapi dev app/main.py
+```
+
+## Current Backend LLM Flow
+
+The local workout-plan generation path is:
+
+1. `POST /generate/workout-plan`
+2. `WorkoutPlanGenerator.generate(profile)`
+3. `build_workout_plan_prompt(profile)`
+4. `OpenAIWorkoutPlanClient.generate_workout_plan(messages)`
+5. `AsyncOpenAI.responses.parse(..., text_format=WorkoutPlan)`
+6. `WorkoutPlan.model_validate(...)`
+
+The app calls the OpenAI SDK directly. It does not hide the provider call behind a
+framework wrapper.
 
 ## Roadmap
 

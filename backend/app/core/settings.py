@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     enable_dev_learning_portal: bool = True
+    openai_api_key: str | None = None
+    openai_model: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -20,3 +20,21 @@ Accept: application/json
 
 ### View Swagger UI
 GET {{baseUrl}}/docs
+
+###
+
+### Generate a structured workout plan
+POST {{baseUrl}}/generate/workout-plan
+Content-Type: application/json
+Accept: application/json
+
+{
+  "goal": "fat_loss",
+  "experience_level": "beginner",
+  "training_days_per_week": 3,
+  "session_duration_minutes": 45,
+  "equipment": ["bodyweight", "dumbbells", "resistance_bands"],
+  "training_location": "home",
+  "injuries_or_limitations": ["Occasional knee discomfort when squatting deeply"],
+  "exercise_preferences": ["Strength training", "Low-impact cardio"]
+}
