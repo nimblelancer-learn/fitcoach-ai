@@ -1,12 +1,20 @@
 import logging
+from time import perf_counter
 from typing import Any
 
-from openai import AsyncOpenAI, OpenAIError
+from openai import APITimeoutError, AsyncOpenAI, OpenAIError
 from pydantic import ValidationError
 
 from app.core.errors import AppError
 from app.core.settings import Settings
-from app.schemas import WorkoutPlan
+from app.schemas import ExperienceLevel, FitnessGoal, WorkoutPlan
+from app.schemas.workout_plan import (
+    ExerciseCategory,
+    Intensity,
+    PrescriptionType,
+    SafetyWarningCode,
+    WarningSeverity,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +46,7 @@ class OpenAIWorkoutPlanClient:
 
     async def generate_workout_plan(self, messages: list[dict]) -> WorkoutPlan:
         client = self._get_client()
+        max_attempts = self._settings.openai_invalid_output_retries + 1
 
         logger.info(
             "openai_workout_plan_request model=%s goal=%s training_days_per_week=%s",
@@ -46,60 +55,87 @@ class OpenAIWorkoutPlanClient:
             _extract_prompt_field(messages, "training_days_per_week"),
         )
 
-        try:
-            response = await client.responses.parse(
-                model=self._settings.openai_model,
-                input=messages,
-                text_format=WorkoutPlan,
-            )
-        except OpenAIError as exc:
-            logger.warning(
-                "openai_workout_plan_request_failed model=%s error_type=%s",
-                self._settings.openai_model,
-                type(exc).__name__,
-            )
-            raise AppError(
-                status_code=502,
-                code="OPENAI_REQUEST_FAILED",
-                message="The workout generation service request failed.",
-            ) from exc
+        last_invalid_output_error: AppError | None = None
 
-        refusal = _extract_refusal(response)
-        if refusal is not None:
-            logger.warning(
-                "openai_workout_plan_refusal model=%s",
-                self._settings.openai_model,
-            )
-            raise AppError(
-                status_code=502,
-                code="OPENAI_REFUSAL",
-                message="The workout generation service did not return a workout plan.",
-            )
+        for attempt in range(1, max_attempts + 1):
+            started_at = perf_counter()
 
-        parsed = getattr(response, "output_parsed", None)
-        if parsed is None:
-            raise AppError(
-                status_code=502,
-                code="OPENAI_INVALID_OUTPUT",
-                message="The workout generation service returned invalid output.",
-            )
+            try:
+                response = await client.responses.parse(
+                    model=self._settings.openai_model,
+                    input=messages,
+                    text_format=WorkoutPlan,
+                    timeout=self._settings.openai_timeout_seconds,
+                )
+            except APITimeoutError as exc:
+                raise _timeout_error(
+                    model=self._settings.openai_model,
+                    attempt=attempt,
+                    started_at=started_at,
+                    timeout_seconds=self._settings.openai_timeout_seconds,
+                ) from exc
+            except TimeoutError as exc:
+                raise _timeout_error(
+                    model=self._settings.openai_model,
+                    attempt=attempt,
+                    started_at=started_at,
+                    timeout_seconds=self._settings.openai_timeout_seconds,
+                ) from exc
+            except OpenAIError as exc:
+                logger.warning(
+                    (
+                        "openai_workout_plan_request_failed model=%s attempt=%s "
+                        "latency_ms=%s error_type=%s"
+                    ),
+                    self._settings.openai_model,
+                    attempt,
+                    _elapsed_ms(started_at),
+                    type(exc).__name__,
+                )
+                raise AppError(
+                    status_code=502,
+                    code="OPENAI_REQUEST_FAILED",
+                    message="The workout generation service request failed.",
+                ) from exc
 
-        try:
-            if isinstance(parsed, WorkoutPlan):
-                return WorkoutPlan.model_validate(parsed.model_dump())
+            refusal = _extract_refusal(response)
+            if refusal is not None:
+                logger.warning(
+                    "openai_workout_plan_refusal model=%s attempt=%s",
+                    self._settings.openai_model,
+                    attempt,
+                )
+                raise AppError(
+                    status_code=502,
+                    code="OPENAI_REFUSAL",
+                    message="The workout generation service did not return a workout plan.",
+                )
 
-            return WorkoutPlan.model_validate(parsed)
-        except ValidationError as exc:
-            logger.warning(
-                "openai_workout_plan_validation_failed model=%s error_count=%s",
-                self._settings.openai_model,
-                len(exc.errors()),
-            )
-            raise AppError(
-                status_code=502,
-                code="OPENAI_INVALID_OUTPUT",
-                message="The workout generation service returned invalid output.",
-            ) from exc
+            try:
+                return _validate_parsed_workout_plan(response, self._settings.openai_model)
+            except AppError as exc:
+                last_invalid_output_error = exc
+                logger.warning(
+                    (
+                        "openai_workout_plan_invalid_output model=%s attempt=%s "
+                        "max_attempts=%s code=%s"
+                    ),
+                    self._settings.openai_model,
+                    attempt,
+                    max_attempts,
+                    exc.code,
+                )
+
+                if attempt < max_attempts:
+                    continue
+
+        logger.warning(
+            "openai_workout_plan_fallback model=%s attempts=%s reason=%s",
+            self._settings.openai_model,
+            max_attempts,
+            last_invalid_output_error.code if last_invalid_output_error else "unknown",
+        )
+        return _build_fallback_workout_plan(messages)
 
 
 def _extract_prompt_field(messages: list[dict], field_name: str) -> str | None:
@@ -115,6 +151,33 @@ def _extract_prompt_field(messages: list[dict], field_name: str) -> str | None:
                 return line.removeprefix(prefix)
 
     return None
+
+
+def _validate_parsed_workout_plan(response: Any, model: str) -> WorkoutPlan:
+    parsed = getattr(response, "output_parsed", None)
+    if parsed is None:
+        raise AppError(
+            status_code=502,
+            code="OPENAI_INVALID_OUTPUT",
+            message="The workout generation service returned invalid output.",
+        )
+
+    try:
+        if isinstance(parsed, WorkoutPlan):
+            return WorkoutPlan.model_validate(parsed.model_dump())
+
+        return WorkoutPlan.model_validate(parsed)
+    except ValidationError as exc:
+        logger.warning(
+            "openai_workout_plan_validation_failed model=%s error_count=%s",
+            model,
+            len(exc.errors()),
+        )
+        raise AppError(
+            status_code=502,
+            code="OPENAI_INVALID_OUTPUT",
+            message="The workout generation service returned invalid output.",
+        ) from exc
 
 
 def _extract_refusal(response: Any) -> str | None:
@@ -135,3 +198,179 @@ def _extract_refusal(response: Any) -> str | None:
                 return refusal
 
     return None
+
+
+def _elapsed_ms(started_at: float) -> int:
+    return int((perf_counter() - started_at) * 1000)
+
+
+def _timeout_error(
+    *,
+    model: str,
+    attempt: int,
+    started_at: float,
+    timeout_seconds: float,
+) -> AppError:
+    logger.warning(
+        ("openai_workout_plan_timeout model=%s attempt=%s latency_ms=%s timeout_seconds=%s"),
+        model,
+        attempt,
+        _elapsed_ms(started_at),
+        timeout_seconds,
+    )
+    return AppError(
+        status_code=504,
+        code="OPENAI_TIMEOUT",
+        message="The workout generation service timed out.",
+    )
+
+
+def _build_fallback_workout_plan(messages: list[dict]) -> WorkoutPlan:
+    goal = _parse_fitness_goal(_extract_prompt_field(messages, "goal"))
+    experience_level = _parse_experience_level(_extract_prompt_field(messages, "experience_level"))
+    training_days_per_week = _parse_training_days_per_week(
+        _extract_prompt_field(messages, "training_days_per_week")
+    )
+    session_duration_minutes = _parse_session_duration_minutes(
+        _extract_prompt_field(messages, "session_duration_minutes")
+    )
+
+    weekly_schedule = []
+    for day_index in range(1, training_days_per_week + 1):
+        weekly_schedule.append(
+            {
+                "day_index": day_index,
+                "title": f"Day {day_index} - Fallback Full Body Session",
+                "focus": "General fitness movement practice",
+                "estimated_duration_minutes": session_duration_minutes,
+                "warm_up": [
+                    "Walk in place for 5 minutes",
+                    "Perform gentle mobility for the hips and shoulders",
+                ],
+                "exercises": [
+                    {
+                        "name": "Bodyweight Sit-to-Stand",
+                        "category": ExerciseCategory.STRENGTH,
+                        "prescription_type": PrescriptionType.REPETITIONS,
+                        "sets": 2,
+                        "reps_min": 8,
+                        "reps_max": 10,
+                        "duration_seconds": None,
+                        "rest_seconds": 60,
+                        "intensity": Intensity.LOW,
+                        "target_muscles": ["legs", "glutes"],
+                        "instructions": [
+                            "Move slowly and keep the range of motion pain free.",
+                            "Stop the set early if sharp discomfort appears.",
+                        ],
+                        "safety_notes": [
+                            "Use a chair or support if needed for balance.",
+                        ],
+                        "alternatives": [
+                            "Supported squat to chair",
+                        ],
+                    },
+                    {
+                        "name": "Brisk Walk",
+                        "category": ExerciseCategory.CARDIO,
+                        "prescription_type": PrescriptionType.DURATION,
+                        "sets": 1,
+                        "reps_min": None,
+                        "reps_max": None,
+                        "duration_seconds": max((session_duration_minutes - 15) * 60, 900),
+                        "rest_seconds": None,
+                        "intensity": Intensity.LOW,
+                        "target_muscles": ["cardiovascular system"],
+                        "instructions": [
+                            "Choose a pace that still allows easy conversation.",
+                        ],
+                        "safety_notes": [
+                            "Reduce pace if breathing becomes difficult.",
+                        ],
+                        "alternatives": [
+                            "Stationary cycling",
+                        ],
+                    },
+                ],
+                "cool_down": [
+                    "Slow walking for 3 minutes",
+                    "Gentle breathing and stretching for 2 minutes",
+                ],
+                "intensity_note": (
+                    "Keep effort conservative because this fallback plan is intended to be safe "
+                    "and broadly applicable."
+                ),
+            }
+        )
+
+    return WorkoutPlan.model_validate(
+        {
+            "title": "Fallback General Fitness Plan",
+            "summary": (
+                "A conservative temporary workout plan returned because the structured model "
+                "response could not be validated after retries."
+            ),
+            "goal": goal,
+            "experience_level": experience_level,
+            "training_days_per_week": training_days_per_week,
+            "duration_weeks": 2,
+            "weekly_schedule": weekly_schedule,
+            "progression_suggestion": (
+                "If all sessions feel comfortable with steady form, add a small amount of time "
+                "or one repetition per set in the following week."
+            ),
+            "safety_warnings": [
+                {
+                    "code": SafetyWarningCode.FORM_PRIORITY,
+                    "severity": WarningSeverity.CAUTION,
+                    "message": (
+                        "This fallback plan is intentionally conservative and should be kept "
+                        "comfortable and pain free."
+                    ),
+                    "recommended_action": (
+                        "Reduce intensity, shorten the session, or stop if symptoms feel unusual."
+                    ),
+                    "applies_to_exercise": None,
+                    "requires_professional_clearance": False,
+                }
+            ],
+        }
+    )
+
+
+def _parse_fitness_goal(value: str | None) -> FitnessGoal:
+    if value is None:
+        return FitnessGoal.GENERAL_FITNESS
+
+    try:
+        return FitnessGoal(value)
+    except ValueError:
+        return FitnessGoal.GENERAL_FITNESS
+
+
+def _parse_experience_level(value: str | None) -> ExperienceLevel:
+    if value is None:
+        return ExperienceLevel.BEGINNER
+
+    try:
+        return ExperienceLevel(value)
+    except ValueError:
+        return ExperienceLevel.BEGINNER
+
+
+def _parse_training_days_per_week(value: str | None) -> int:
+    try:
+        parsed = int(value) if value is not None else 3
+    except ValueError:
+        parsed = 3
+
+    return min(max(parsed, 1), 7)
+
+
+def _parse_session_duration_minutes(value: str | None) -> int:
+    try:
+        parsed = int(value) if value is not None else 30
+    except ValueError:
+        parsed = 30
+
+    return min(max(parsed, 15), 180)
