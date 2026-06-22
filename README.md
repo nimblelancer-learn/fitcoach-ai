@@ -97,6 +97,17 @@ If you want runtime cost estimates without editing code, set:
 - `OPENAI_INPUT_COST_PER_MILLION_TOKENS_USD`
 - `OPENAI_OUTPUT_COST_PER_MILLION_TOKENS_USD`
 
+## Local Testing
+
+Run the backend test suite with:
+
+```bash
+cd backend
+uv run pytest tests -q
+```
+
+The real OpenAI integration test is opt-in and guarded by environment variables.
+
 ## Roadmap
 
 - Setup FastAPI backend skeleton
