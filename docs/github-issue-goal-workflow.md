@@ -55,6 +55,23 @@ The goal should cover the full lifecycle:
 - comment documentation on the issue
 - close the issue
 
+## Required skills
+
+This workflow should explicitly use these skills:
+
+- `ck:plan` for issue analysis, phase planning, and plan-file scaffolding
+- `ck:cook` for implementation execution after the plan is clear
+- `ck:git` for staging, commit, push, PR creation, and merge operations
+
+Skill mapping:
+
+- planning step: use `ck:plan`
+- implementation and validation step: use `ck:cook`
+- git and GitHub handoff step: use `ck:git`
+
+If a run does not use these skills, treat that as workflow drift and correct it
+in the next run.
+
 ## Standard workflow
 
 1. Confirm repository state.
@@ -66,17 +83,18 @@ The goal should cover the full lifecycle:
    - comments
    - labels
    - linked project items when available
-5. Translate the issue into a concrete implementation plan.
+5. Use `ck:plan` to translate the issue into a concrete implementation plan.
 6. Create a dedicated branch named after the issue.
-7. Implement the required changes in the repo.
+7. Use `ck:cook` to implement the required changes in the repo from the
+   approved plan.
 8. Add or update tests when behavior or artifact contracts change.
 9. Run validation commands relevant to the change.
-10. Commit with a scoped message.
-11. Push the branch to `origin`.
-12. Create a PR that links the issue with `Closes #<issue_number>` when closure
+10. Use `ck:git` to commit with a scoped message.
+11. Use `ck:git` to push the branch to `origin`.
+12. Use `ck:git` to create a PR that links the issue with `Closes #<issue_number>` when closure
     on merge is desired.
 13. Check PR mergeability and status checks.
-14. Merge the PR if the repository rules allow it.
+14. Use `ck:git` to merge the PR if the repository rules allow it.
 15. Update linked project fields such as `Evidence` when a linked project item
     actually exists and the account has permission.
 16. Comment on the issue with:
@@ -93,6 +111,8 @@ The goal should cover the full lifecycle:
 - Do not commit directly to `main` for issue work unless the user explicitly
   asks for that exception.
 - Prefer a dedicated feature branch per issue.
+- Do not skip planning before implementation; `ck:cook` should consume a plan,
+  not replace it.
 - Do not assume a GitHub Project item exists for the issue.
 - Check `projectItems` first before trying to update an `Evidence` field.
 - If `projectItems` is empty, state clearly that no linked Project evidence
@@ -153,5 +173,5 @@ The workflow is complete only when all of these are true:
 Use this exact instruction when you want Codex to run the workflow again:
 
 ```text
-Reference docs/github-issue-goal-workflow.md, use goal mode, get the oldest open GitHub issue by created date, and execute the workflow end to end until the issue is finished or clearly blocked.
+Reference docs/github-issue-goal-workflow.md, use goal mode, use ck:plan for planning, ck:cook for implementation, ck:git for git/GitHub operations, get the oldest open GitHub issue by created date, and execute the workflow end to end until the issue is finished or clearly blocked.
 ```
