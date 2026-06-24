@@ -1,0 +1,46 @@
+slug = "llm-openai-client"
+title = "app.llm.openai_client"
+module_path = "app.llm.openai_client"
+summary = "Owns the OpenAI Responses API call, structured parsing, reliability handling, usage logging, and fallback workout generation."
+why_it_exists = "The repo needs one place to isolate model transport details and convert unpredictable LLM behavior into a stable WorkoutPlan contract."
+when_it_runs = "Whenever the workout generation service asks for a plan."
+dependencies = [
+  "openai.AsyncOpenAI for the Responses API client.",
+  "app.core.settings.Settings for model, timeout, retry, and optional pricing configuration.",
+  "app.schemas.WorkoutPlan for structured parsing and fallback validation.",
+  "app.llm.pricing for optional cost estimation from token usage.",
+  "app.core.errors.AppError for normalized API-facing failures.",
+]
+used_by = [
+  "app.services.workout_plan_generator delegates every model request to this client.",
+]
+safe_edit_notes = [
+  "Keep transport failures, refusal handling, invalid-output retries, and fallback generation distinct because they communicate different failure modes to callers and logs.",
+  "If you change logged fields, retry limits, or fallback rules, update the workout generation flow and related glossary terms because those pages teach the current LLM handling strategy.",
+]
+related_modules = [
+  "core-settings",
+  "routes-generate",
+  "workout-plan-generator",
+  "llm-prompts",
+  "llm-pricing",
+]
+related_flows = ["workout-plan-generation"]
+
+[[key_functions]]
+name = "OpenAIWorkoutPlanClient"
+python_path = "app.llm.openai_client.OpenAIWorkoutPlanClient"
+summary = "Owns the responses.parse() request path, then coordinates token logging, retry decisions, and fallback generation."
+why_it_matters = "The class is the main boundary that turns OpenAI responses into the repo's stable WorkoutPlan contract."
+
+[[key_functions]]
+name = "_validate_parsed_workout_plan"
+python_path = "app.llm.openai_client._validate_parsed_workout_plan"
+summary = "Revalidates the parsed model output and converts schema mismatches into a consistent AppError."
+why_it_matters = "It shows why a model response can be syntactically returned by OpenAI but still be rejected by repo-level validation."
+
+[[key_functions]]
+name = "_build_fallback_workout_plan"
+python_path = "app.llm.openai_client._build_fallback_workout_plan"
+summary = "Creates a conservative backup WorkoutPlan when repeated invalid structured outputs exhaust the retry budget."
+why_it_matters = "This function explains how the repo stays available even when model output quality is unreliable."

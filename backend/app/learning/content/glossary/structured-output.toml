@@ -1,0 +1,5 @@
+slug = "structured-output"
+term = "Structured output"
+definition = "A model response pattern where the application asks the LLM to return data that matches a specific schema instead of free-form prose."
+why_it_matters_in_repo = "FitCoach AI calls the OpenAI Responses API with text_format=WorkoutPlan, then revalidates the parsed result. That makes structured output the foundation for both retry decisions and fallback behavior."
+related_modules = ["llm-openai-client", "llm-prompts"]

@@ -1,0 +1,28 @@
+slug = "llm-prompts"
+title = "app.llm.prompts"
+module_path = "app.llm.prompts"
+summary = "Defines the system instruction and user-message shape used for workout plan generation."
+why_it_exists = "Prompt rules are easier to review and test when they live in one focused module instead of inside the route or client."
+when_it_runs = "Each time WorkoutPlanGenerator.generate() prepares messages for a model request."
+dependencies = [
+  "app.schemas.UserProfile for the fields copied into the prompt.",
+  "The WorkoutPlan schema contract described in the system instruction.",
+]
+used_by = [
+  "app.services.workout_plan_generator calls build_workout_plan_prompt() before invoking the OpenAI client.",
+]
+safe_edit_notes = [
+  "Keep prompt formatting explicit and deterministic because the client later extracts a few fields from these messages for logging and fallback behavior.",
+  "If you rename prompt fields like goal or training_days_per_week, update app.llm.openai_client because it parses those exact prefixes.",
+]
+related_modules = [
+  "workout-plan-generator",
+  "llm-openai-client",
+]
+related_flows = ["workout-plan-generation"]
+
+[[key_functions]]
+name = "build_workout_plan_prompt"
+python_path = "app.llm.prompts.build_workout_plan_prompt"
+summary = "Creates the system and user messages that ask the model for a schema-conforming workout plan."
+why_it_matters = "This is the highest-signal place to learn which user profile fields the model actually sees."

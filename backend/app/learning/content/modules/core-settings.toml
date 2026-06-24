@@ -12,17 +12,21 @@ used_by = [
   "app.main calls get_settings() before building the FastAPI app.",
   "app.state.settings stores the resolved Settings object so startup and routes can reuse it.",
   "app.api.routes_learning checks the feature flag through request.app.state.settings.",
+  "app.llm.openai_client reads model, timeout, retry, and optional pricing settings from this object.",
 ]
 safe_edit_notes = [
   "Keep field names aligned with the environment variable contract because changing them can silently disable settings overrides.",
   "If you add a new setting that affects startup behavior, update the startup flow so the one-time boot path stays accurate.",
+  "If you add or rename OpenAI settings, update the workout generation flow because it documents which knobs affect retries, latency, and cost logging.",
 ]
 related_modules = [
   "app-main",
   "routes-learning",
   "learning-loader",
+  "llm-openai-client",
+  "llm-pricing",
 ]
-related_flows = ["startup-lifecycle"]
+related_flows = ["startup-lifecycle", "workout-plan-generation"]
 
 [[key_functions]]
 name = "Settings"

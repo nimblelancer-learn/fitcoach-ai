@@ -1,0 +1,5 @@
+slug = "fallback-plan"
+term = "Fallback plan"
+definition = "A conservative backup result returned when the preferred generation path cannot produce a trustworthy output."
+why_it_matters_in_repo = "If repeated structured responses still fail WorkoutPlan validation, FitCoach AI returns a safe fallback workout plan instead of leaving the route unavailable."
+related_modules = ["llm-openai-client"]

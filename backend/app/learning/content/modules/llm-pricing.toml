@@ -1,0 +1,33 @@
+slug = "llm-pricing"
+title = "app.llm.pricing"
+module_path = "app.llm.pricing"
+summary = "Provides small helpers for estimating request cost from token usage when pricing data is available."
+why_it_exists = "Cost math stays easier to reason about when it is isolated from request orchestration and logging code."
+when_it_runs = "After a model response returns usage data and the OpenAI client wants to log an estimated cost."
+dependencies = [
+  "A local pricing table or explicit per-million-token settings values.",
+]
+used_by = [
+  "app.llm.openai_client calls these helpers after extracting input and output token counts.",
+]
+safe_edit_notes = [
+  "Unknown models should keep returning an unavailable estimate rather than guessing at pricing.",
+  "If you change pricing sources, update the learning content so beginners still understand why cost estimates may be missing.",
+]
+related_modules = [
+  "core-settings",
+  "llm-openai-client",
+]
+related_flows = ["workout-plan-generation"]
+
+[[key_functions]]
+name = "estimate_request_cost_usd"
+python_path = "app.llm.pricing.estimate_request_cost_usd"
+summary = "Looks up local model pricing and returns an estimated request cost when the table knows the model."
+why_it_matters = "It explains why token usage may be logged even when cost is unavailable."
+
+[[key_functions]]
+name = "estimate_request_cost_from_pricing_usd"
+python_path = "app.llm.pricing.estimate_request_cost_from_pricing_usd"
+summary = "Computes the request cost directly from token counts and explicit input and output pricing values."
+why_it_matters = "This is the deterministic fallback when pricing comes from settings instead of the local table."

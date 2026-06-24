@@ -10,6 +10,7 @@ dependencies = [
   "app.core.settings.get_settings to resolve feature flags before the app is shared.",
   "app.core.errors.register_exception_handlers to keep failures consistent.",
   "app.middleware.request_logging.request_logging_middleware to stamp and log every request.",
+  "app.api.routes_generate and app.services.WorkoutPlanGenerator for the LLM-backed workout generation feature.",
   "app.api.routes_health and app.api.routes_learning for route registration.",
   "app.learning.loader.load_learning_portal for startup-time portal validation.",
 ]
@@ -26,6 +27,9 @@ safe_edit_notes = [
 related_modules = [
   "core-settings",
   "routes-health",
+  "routes-generate",
+  "workout-plan-generator",
+  "llm-openai-client",
   "routes-learning",
   "learning-loader",
   "request-logging",

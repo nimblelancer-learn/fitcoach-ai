@@ -42,9 +42,13 @@ async def test_learning_overview_renders_when_enabled(
     assert "FitCoach AI backend learning portal" in response.text
     assert "app.main" in response.text
     assert "app.core.settings" in response.text
+    assert "app.api.routes_generate" in response.text
+    assert "app.llm.openai_client" in response.text
     assert "app.learning.loader" in response.text
     assert "Startup lifecycle" in response.text
     assert "Request lifecycle" in response.text
+    assert "Workout plan generation" in response.text
+    assert 'href="/__learn/flows/workout-plan-generation"' in response.text
     assert 'href="/__learn/flows/startup-lifecycle"' in response.text
     assert "Open flow" in response.text
     assert "Glossary" in response.text
@@ -80,6 +84,41 @@ async def test_learning_core_settings_module_detail_renders_when_enabled(
     assert "app.core.settings.get_settings" in response.text
     assert "/__learn/glossary#feature-flag" in response.text
     assert "/__learn/glossary#app-state" in response.text
+    assert "/__learn/glossary#retry" in response.text
+
+
+@pytest.mark.anyio
+async def test_learning_workout_generation_flow_renders_when_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ENABLE_DEV_LEARNING_PORTAL", "true")
+
+    response = await _get(create_app(), "/__learn/flows/workout-plan-generation")
+
+    assert response.status_code == 200
+    assert "Workout plan generation" in response.text
+    assert "responses.parse()" in response.text
+    assert "text_format=WorkoutPlan" in response.text
+    assert "OPENAI_INVALID_OUTPUT" in response.text
+    assert "input_tokens" in response.text
+    assert "openai_invalid_output_retries" in response.text
+    assert "openai_workout_plan_fallback" in response.text
+
+
+@pytest.mark.anyio
+async def test_learning_llm_openai_client_module_detail_renders_when_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ENABLE_DEV_LEARNING_PORTAL", "true")
+
+    response = await _get(create_app(), "/__learn/modules/llm-openai-client")
+
+    assert response.status_code == 200
+    assert "structured parsing, reliability handling, usage logging" in response.text
+    assert "app.llm.openai_client.OpenAIWorkoutPlanClient" in response.text
+    assert "/__learn/flows/workout-plan-generation" in response.text
+    assert "/__learn/glossary#structured-output" in response.text
+    assert "/__learn/glossary#token-usage" in response.text
 
 
 @pytest.mark.anyio
@@ -125,6 +164,10 @@ async def test_learning_glossary_renders_when_enabled(
     assert "Feature flag" in response.text
     assert "App state" in response.text
     assert "Lifespan" in response.text
+    assert "Structured output" in response.text
+    assert "Retry" in response.text
+    assert "Token usage" in response.text
+    assert "Fallback plan" in response.text
     assert "Why this matters here:" in response.text
 
 

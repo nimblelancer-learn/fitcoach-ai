@@ -1,0 +1,67 @@
+slug = "workout-plan-generation"
+title = "Workout plan generation"
+summary = "Walks through the current LLM-backed workout generation path from the POST route to structured response validation, usage logging, retries, and fallback behavior."
+why_it_matters = "This flow captures the repo's first real AI feature, so it is the main place to learn how FitCoach AI handles LLM responses safely."
+when_to_read = "Read this after request lifecycle if you want the detailed execution order for the OpenAI-backed generation endpoint."
+related_modules = [
+  "routes-generate",
+  "workout-plan-generator",
+  "llm-prompts",
+  "llm-openai-client",
+  "llm-pricing",
+  "core-settings",
+]
+
+[[steps]]
+title = "The POST route validates the user profile"
+description = "FastAPI parses the request body into app.schemas.UserProfile, then app.api.routes_generate.generate_workout_plan() reads the shared WorkoutPlanGenerator from request.app.state."
+module_path = "app.api.routes_generate"
+python_path = "app.api.routes_generate.generate_workout_plan"
+
+[[steps]]
+title = "The service builds the prompt messages"
+description = "WorkoutPlanGenerator.generate() delegates prompt construction to build_workout_plan_prompt(), which flattens the user profile into one system instruction plus one user message."
+module_path = "app.services.workout_plan_generator"
+python_path = "app.services.workout_plan_generator.WorkoutPlanGenerator"
+
+[[steps]]
+title = "The OpenAI client logs request context before calling the model"
+description = "OpenAIWorkoutPlanClient.generate_workout_plan() logs the selected model plus a few extracted prompt fields such as goal and training_days_per_week before making the Responses API call."
+module_path = "app.llm.openai_client"
+python_path = "app.llm.openai_client.OpenAIWorkoutPlanClient"
+
+[[steps]]
+title = "The model call requests structured parsing into WorkoutPlan"
+description = "The client calls responses.parse() with text_format=WorkoutPlan, so OpenAI attempts to return data that already matches the repo's schema instead of free-form text."
+module_path = "app.llm.openai_client"
+python_path = "app.llm.openai_client.OpenAIWorkoutPlanClient"
+
+[[steps]]
+title = "Transport failures become AppError responses immediately"
+description = "Timeouts raise OPENAI_TIMEOUT with HTTP 504, and other OpenAI client errors raise OPENAI_REQUEST_FAILED with HTTP 502. These failures are not retried because they are request-level faults rather than bad structured output."
+module_path = "app.llm.openai_client"
+python_path = "app.llm.openai_client.OpenAIWorkoutPlanClient"
+
+[[steps]]
+title = "Successful responses log latency, token usage, and optional cost"
+description = "After each response, the client extracts input_tokens, output_tokens, and total_tokens from response.usage, estimates cost when pricing data exists, and writes those fields into the response log line."
+module_path = "app.llm.openai_client"
+python_path = "app.llm.openai_client._extract_usage"
+
+[[steps]]
+title = "Refusals and invalid structured outputs follow different paths"
+description = "If the response contains a refusal, the client raises OPENAI_REFUSAL. If output_parsed is missing or fails WorkoutPlan validation, the client raises OPENAI_INVALID_OUTPUT for that attempt instead."
+module_path = "app.llm.openai_client"
+python_path = "app.llm.openai_client._validate_parsed_workout_plan"
+
+[[steps]]
+title = "Only invalid structured output is retried"
+description = "The retry budget comes from Settings.openai_invalid_output_retries. The client loops again only after OPENAI_INVALID_OUTPUT, which keeps retries focused on schema reliability instead of masking network or refusal failures."
+module_path = "app.llm.openai_client"
+python_path = "app.llm.openai_client.OpenAIWorkoutPlanClient"
+
+[[steps]]
+title = "Exhausted retries fall back to a conservative plan"
+description = "When every structured attempt stays invalid, the client logs an openai_workout_plan_fallback event and returns a safe WorkoutPlan built from a few prompt fields rather than failing the whole endpoint."
+module_path = "app.llm.openai_client"
+python_path = "app.llm.openai_client._build_fallback_workout_plan"

@@ -1,0 +1,5 @@
+slug = "token-usage"
+term = "Token usage"
+definition = "The number of input and output tokens consumed by one model request, often used for observability and cost estimation."
+why_it_matters_in_repo = "The OpenAI client extracts input_tokens, output_tokens, and total_tokens from each response, logs them, and optionally estimates request cost so developers can see how expensive workout generation is."
+related_modules = ["llm-openai-client", "llm-pricing"]

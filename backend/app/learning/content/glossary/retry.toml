@@ -1,0 +1,5 @@
+slug = "retry"
+term = "Retry"
+definition = "A controlled second or later attempt after a previous operation failed in a way the application believes might succeed on another try."
+why_it_matters_in_repo = "This repo only retries OPENAI_INVALID_OUTPUT cases, using openai_invalid_output_retries, because malformed structured output is treated differently from timeouts, refusals, or other request failures."
+related_modules = ["core-settings", "llm-openai-client"]
