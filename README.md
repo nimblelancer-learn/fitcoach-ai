@@ -108,6 +108,14 @@ uv run pytest tests -q
 
 The real OpenAI integration test is opt-in and guarded by environment variables.
 
+## Knowledge Base Assets
+
+The starter retrieval corpus lives in `knowledge_base/`.
+
+- `knowledge_base/raw/` stores chunk-ready markdown documents grouped by topic.
+- `knowledge_base/source-policy.md` defines what sources may enter the corpus.
+- `knowledge_base/sources.md` tracks document provenance for later RAG work.
+
 ## Roadmap
 
 - Setup FastAPI backend skeleton
