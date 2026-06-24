@@ -60,9 +60,36 @@ cd backend
 uv run pytest tests -q
 ```
 
+Run the focused retrieval quality checks:
+
+```bash
+cd backend
+uv run pytest tests/rag/test_retriever.py tests/rag/test_retrieval_quality.py tests/rag/test_index.py -q
+```
+
 Run the opt-in OpenAI integration test only when you want a real provider call:
 
 ```bash
 cd backend
 RUN_OPENAI_INTEGRATION=1 OPENAI_API_KEY=... OPENAI_MODEL=gpt-4.1-mini uv run pytest tests/integration/test_openai_workout_plan_integration.py -q
 ```
+
+## Retrieval quality notes
+
+The retrieval quality harness uses the checked-in `knowledge_base/processed/chunks-v1.json`
+artifact plus the deterministic `local-hash` embedder. It is intended to catch
+obvious regressions in query-to-chunk relevance without requiring a live Qdrant
+instance.
+
+Known early failure cases:
+
+- Broad or ambiguous queries can still rank a nearby chunk above the best chunk.
+  For example, safety wording may overlap with the shorter foundations safety
+  chunk unless a metadata filter narrows the search.
+- `local-hash` embeddings are only a local approximation. Passing tests do not
+  guarantee the same ranking quality when `RAG_EMBEDDING_PROVIDER=openai`.
+- The checks only cover the current curated corpus. Missing or weak source
+  documents will still produce weak retrieval even when the harness passes.
+- Empty query strings or `RAG_RETRIEVAL_LIMIT <= 0` return no chunks by design.
+- Metadata filtering is exact-match only. A wrong filter key or value can
+  silently over-constrain retrieval and produce empty results.

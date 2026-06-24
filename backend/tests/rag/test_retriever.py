@@ -10,9 +10,19 @@ class FakeEmbeddingClient:
 
 
 class FakeQdrantClient:
-    def search_points(self, query_vector: list[float], *, limit: int) -> list[dict]:
+    def __init__(self) -> None:
+        self.received_metadata_filter: dict[str, str] | None = None
+
+    def search_points(
+        self,
+        query_vector: list[float],
+        *,
+        limit: int,
+        metadata_filter: dict[str, str] | None = None,
+    ) -> list[dict]:
         assert query_vector == [0.25, 0.75]
         assert limit == 2
+        self.received_metadata_filter = metadata_filter
         return [
             {
                 "score": 0.88,
@@ -46,10 +56,11 @@ def valid_profile() -> UserProfile:
 
 
 def test_knowledge_retriever_maps_qdrant_payloads() -> None:
+    qdrant_client = FakeQdrantClient()
     retriever = KnowledgeRetriever(
         Settings(rag_retrieval_limit=2),
         embedding_client=FakeEmbeddingClient(),  # type: ignore[arg-type]
-        qdrant_client=FakeQdrantClient(),  # type: ignore[arg-type]
+        qdrant_client=qdrant_client,  # type: ignore[arg-type]
     )
 
     chunks = retriever.retrieve("goal: fat_loss")
@@ -66,6 +77,20 @@ def test_knowledge_retriever_maps_qdrant_payloads() -> None:
             section_path=["Warm-up", "Basics"],
         )
     ]
+    assert qdrant_client.received_metadata_filter is None
+
+
+def test_knowledge_retriever_passes_metadata_filter() -> None:
+    qdrant_client = FakeQdrantClient()
+    retriever = KnowledgeRetriever(
+        Settings(rag_retrieval_limit=2),
+        embedding_client=FakeEmbeddingClient(),  # type: ignore[arg-type]
+        qdrant_client=qdrant_client,  # type: ignore[arg-type]
+    )
+
+    retriever.retrieve("goal: fat_loss", metadata_filter={"topic": "mobility"})
+
+    assert qdrant_client.received_metadata_filter == {"topic": "mobility"}
 
 
 def test_build_retrieval_query_flattens_profile_fields() -> None:
