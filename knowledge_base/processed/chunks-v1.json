@@ -1,0 +1,195 @@
+{
+  "schema_version": "chunk-set-v1",
+  "document_count": 6,
+  "chunk_count": 8,
+  "documents": [
+    {
+      "document_id": "kb-cardio-cardio-basics-for-beginners-v1",
+      "source_path": "raw/cardio/cardio-basics-for-beginners.md",
+      "title": "Cardio Basics for Beginners",
+      "topic": "cardio",
+      "status": "approved_for_chunking"
+    },
+    {
+      "document_id": "kb-foundations-beginner-training-principles-v1",
+      "source_path": "raw/foundations/beginner-training-principles.md",
+      "title": "Beginner Training Principles",
+      "topic": "foundations",
+      "status": "approved_for_chunking"
+    },
+    {
+      "document_id": "kb-mobility-warm-up-and-cool-down-basics-v1",
+      "source_path": "raw/mobility/warm-up-and-cool-down-basics.md",
+      "title": "Warm-Up and Cool-Down Basics",
+      "topic": "mobility",
+      "status": "approved_for_chunking"
+    },
+    {
+      "document_id": "kb-recovery-recovery-sleep-and-rest-days-v1",
+      "source_path": "raw/recovery/recovery-sleep-and-rest-days.md",
+      "title": "Recovery, Sleep, and Rest Days",
+      "topic": "recovery",
+      "status": "approved_for_chunking"
+    },
+    {
+      "document_id": "kb-safety-exercise-safety-and-red-flags-v1",
+      "source_path": "raw/safety/exercise-safety-and-red-flags.md",
+      "title": "Exercise Safety and Red Flags",
+      "topic": "safety",
+      "status": "approved_for_chunking"
+    },
+    {
+      "document_id": "kb-strength-full-body-strength-for-beginners-v1",
+      "source_path": "raw/strength/full-body-strength-for-beginners.md",
+      "title": "Full-Body Strength for Beginners",
+      "topic": "strength",
+      "status": "approved_for_chunking"
+    }
+  ],
+  "chunks": [
+    {
+      "chunk_id": "kb-cardio-cardio-basics-for-beginners-v1::chunk-000",
+      "document_id": "kb-cardio-cardio-basics-for-beginners-v1",
+      "source_path": "raw/cardio/cardio-basics-for-beginners.md",
+      "title": "Cardio Basics for Beginners",
+      "topic": "cardio",
+      "source_type": "curated_internal",
+      "intended_use": "retrieval_grounding",
+      "last_reviewed": "2026-06-24",
+      "status": "approved_for_chunking",
+      "chunk_index": 0,
+      "section_path": [
+        "Cardio Basics for Beginners",
+        "Goal"
+      ],
+      "word_count": 137,
+      "text": "Provide low-risk cardio guidance for beginner plans that need simple intensity\ncontrol.\n\n- Low to moderate intensity is the default starting point for deconditioned\n  users.\n- A conversational pace is usually a safer default than maximal interval work.\n- Session difficulty should match the user's training history, available time,\n  and recovery capacity.\n\n- Walking\n- Cycling\n- Elliptical training\n- Marching in place\n- Low-impact circuits with short work periods\n\n- Short sessions can start around 10 to 20 minutes and extend over time.\n- Cardio can be standalone or placed after strength work when fatigue does not\n  compromise safety.\n- Intervals for beginners should use generous recovery periods and avoid\n  all-out sprint language.\n\n- Stop sessions for chest pain, severe breathlessness, faintness, or unusual\n  symptoms.\n- Low-impact options are preferred when joint irritation is already present."
+    },
+    {
+      "chunk_id": "kb-foundations-beginner-training-principles-v1::chunk-000",
+      "document_id": "kb-foundations-beginner-training-principles-v1",
+      "source_path": "raw/foundations/beginner-training-principles.md",
+      "title": "Beginner Training Principles",
+      "topic": "foundations",
+      "source_type": "curated_internal",
+      "intended_use": "retrieval_grounding",
+      "last_reviewed": "2026-06-24",
+      "status": "approved_for_chunking",
+      "chunk_index": 0,
+      "section_path": [
+        "Beginner Training Principles",
+        "Goal"
+      ],
+      "word_count": 149,
+      "text": "Provide stable beginner guidance that helps the planner choose a manageable\nweekly structure instead of an aggressive plan.\n\n- Most beginners respond well to 2 to 4 training days per week.\n- Full-body training is usually simpler to recover from than high-volume split\n  routines.\n- Start with moderate effort and leave a small performance buffer instead of\n  pushing every set to failure.\n- Use a mix of squat, hinge, push, pull, carry, and core patterns across the\n  week when equipment allows.\n- Increase difficulty gradually through small jumps in reps, time, load, or\n  session density.\n\n- Choose fewer exercises done consistently rather than many exercises rotated\n  randomly.\n- Match session length to the user's actual schedule so adherence stays realistic.\n- Beginners benefit from repeating the same main patterns long enough to learn\n  technique and confidence.\n- Rest days should be spread across the week when training frequency increases."
+    },
+    {
+      "chunk_id": "kb-foundations-beginner-training-principles-v1::chunk-001",
+      "document_id": "kb-foundations-beginner-training-principles-v1",
+      "source_path": "raw/foundations/beginner-training-principles.md",
+      "title": "Beginner Training Principles",
+      "topic": "foundations",
+      "source_type": "curated_internal",
+      "intended_use": "retrieval_grounding",
+      "last_reviewed": "2026-06-24",
+      "status": "approved_for_chunking",
+      "chunk_index": 1,
+      "section_path": [
+        "Beginner Training Principles",
+        "Safety constraints"
+      ],
+      "word_count": 32,
+      "text": "- Sharp pain, dizziness, chest pain, or severe shortness of breath are stop\n  signals, not adaptation signals.\n- Existing injuries or movement limitations should reduce exercise complexity and\n  range of motion demands."
+    },
+    {
+      "chunk_id": "kb-mobility-warm-up-and-cool-down-basics-v1::chunk-000",
+      "document_id": "kb-mobility-warm-up-and-cool-down-basics-v1",
+      "source_path": "raw/mobility/warm-up-and-cool-down-basics.md",
+      "title": "Warm-Up and Cool-Down Basics",
+      "topic": "mobility",
+      "source_type": "curated_internal",
+      "intended_use": "retrieval_grounding",
+      "last_reviewed": "2026-06-24",
+      "status": "approved_for_chunking",
+      "chunk_index": 0,
+      "section_path": [
+        "Warm-Up and Cool-Down Basics",
+        "Goal"
+      ],
+      "word_count": 109,
+      "text": "Support plan sections that prepare users for training and end sessions gradually.\n\n- Warm-ups should raise body temperature and rehearse the session's movement\n  patterns.\n- Five to ten minutes is often enough for beginner sessions.\n- Dynamic movements are usually a better fit before training than long passive\n  stretching blocks.\n\n- Brisk walking\n- Marching in place\n- Arm circles\n- Bodyweight squats to a comfortable depth\n- Light band rows or shoulder activation drills\n\n- Cool-downs can gradually reduce effort and reinforce comfortable range of motion.\n- Easy walking and gentle stretching are usually sufficient for beginner plans.\n- Cool-downs should not introduce painful or advanced mobility drills."
+    },
+    {
+      "chunk_id": "kb-recovery-recovery-sleep-and-rest-days-v1::chunk-000",
+      "document_id": "kb-recovery-recovery-sleep-and-rest-days-v1",
+      "source_path": "raw/recovery/recovery-sleep-and-rest-days.md",
+      "title": "Recovery, Sleep, and Rest Days",
+      "topic": "recovery",
+      "source_type": "curated_internal",
+      "intended_use": "retrieval_grounding",
+      "last_reviewed": "2026-06-24",
+      "status": "approved_for_chunking",
+      "chunk_index": 0,
+      "section_path": [
+        "Recovery, Sleep, and Rest Days",
+        "Goal"
+      ],
+      "word_count": 120,
+      "text": "Keep generated plans realistic by treating recovery as part of the program, not\nas an optional extra.\n\n- Beginners usually need at least one full rest day each week.\n- Poor sleep, persistent soreness, and declining motivation can signal that\n  total workload is too high.\n- Recovery improves when hard sessions are separated by easier days or rest days.\n\n- Consistent sleep schedules support energy, recovery, and training adherence.\n- Reduced sleep is a reason to scale intensity or volume down temporarily.\n\n- If soreness lasts several days, reduce sets, intensity, or exercise novelty.\n- If a user misses sessions often, simplify the schedule before adding more work.\n- Deload-style weeks can be useful when fatigue accumulates across several weeks."
+    },
+    {
+      "chunk_id": "kb-safety-exercise-safety-and-red-flags-v1::chunk-000",
+      "document_id": "kb-safety-exercise-safety-and-red-flags-v1",
+      "source_path": "raw/safety/exercise-safety-and-red-flags.md",
+      "title": "Exercise Safety and Red Flags",
+      "topic": "safety",
+      "source_type": "curated_internal",
+      "intended_use": "retrieval_grounding",
+      "last_reviewed": "2026-06-24",
+      "status": "approved_for_chunking",
+      "chunk_index": 0,
+      "section_path": [
+        "Exercise Safety and Red Flags",
+        "Goal"
+      ],
+      "word_count": 107,
+      "text": "Define retrieval content that reinforces safe boundaries instead of encouraging\nthe model to improvise around risk.\n\n- Chest pain\n- Fainting or near-fainting\n- Sudden severe shortness of breath\n- Severe dizziness\n- Sharp or worsening pain during a movement\n\n- When symptoms suggest medical risk, the plan should pause and recommend\n  professional assessment.\n- When a movement causes pain, reduce complexity, load, or range of motion\n  instead of forcing progression.\n- Beginners should not be pushed into high-skill lifts without a safer fallback.\n\n- The knowledge base may explain when to stop or scale down.\n- The knowledge base should not diagnose injuries or prescribe rehabilitation."
+    },
+    {
+      "chunk_id": "kb-strength-full-body-strength-for-beginners-v1::chunk-000",
+      "document_id": "kb-strength-full-body-strength-for-beginners-v1",
+      "source_path": "raw/strength/full-body-strength-for-beginners.md",
+      "title": "Full-Body Strength for Beginners",
+      "topic": "strength",
+      "source_type": "curated_internal",
+      "intended_use": "retrieval_grounding",
+      "last_reviewed": "2026-06-24",
+      "status": "approved_for_chunking",
+      "chunk_index": 0,
+      "section_path": [
+        "Full-Body Strength for Beginners",
+        "Goal"
+      ],
+      "word_count": 149,
+      "text": "Describe a conservative strength template for users who need simple, repeatable\nexercise selection.\n\n- Favor compound patterns that train multiple muscle groups with simple setup.\n- Pick stable exercises before highly technical or explosive variations.\n- When possible, pair each lower-body movement with a push and a pull movement.\n- Home plans should prioritize bodyweight, dumbbells, resistance bands, and\n  chair or bench-supported variations.\n\n- Most beginner strength work fits well in 2 to 4 sets of 6 to 12 repetitions.\n- Use loads that allow clean technique and controlled tempo.\n- Stop sets when technique clearly degrades instead of chasing extra repetitions.\n- Rest about 60 to 120 seconds between moderate strength sets.\n\n- Add repetitions before load when the user has limited equipment.\n- Add load only when the current rep range feels repeatable with solid form.\n- If recovery is poor, reduce volume before removing training entirely."
+    },
+    {
+      "chunk_id": "kb-strength-full-body-strength-for-beginners-v1::chunk-001",
+      "document_id": "kb-strength-full-body-strength-for-beginners-v1",
+      "source_path": "raw/strength/full-body-strength-for-beginners.md",
+      "title": "Full-Body Strength for Beginners",
+      "topic": "strength",
+      "source_type": "curated_internal",
+      "intended_use": "retrieval_grounding",
+      "last_reviewed": "2026-06-24",
+      "status": "approved_for_chunking",
+      "chunk_index": 1,
+      "section_path": [
+        "Full-Body Strength for Beginners",
+        "Substitution logic"
+      ],
+      "word_count": 33,
+      "text": "- If a movement irritates a joint, swap to a simpler variation in a pain-free\n  range of motion.\n- If equipment is unavailable, preserve the movement pattern before chasing an\n  exact exercise match."
+    }
+  ]
+}
