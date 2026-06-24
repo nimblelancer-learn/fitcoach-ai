@@ -4,7 +4,9 @@ import pytest
 from app.core.errors import AppError
 from app.core.settings import get_settings
 from app.main import create_app
+from app.rag.retriever import RetrievedChunk
 from app.schemas import WorkoutPlan
+from app.services import GenerationDebugContext
 
 
 def valid_profile_payload() -> dict:
@@ -141,11 +143,15 @@ class FakeGenerator:
     def __init__(self, result: WorkoutPlan | None = None, error: Exception | None = None) -> None:
         self._result = result
         self._error = error
+        self._debug_context = GenerationDebugContext(retrieval_query="", retrieved_chunks=[])
 
     async def generate(self, profile):
         if self._error is not None:
             raise self._error
         return self._result
+
+    def get_last_debug_context(self) -> GenerationDebugContext:
+        return self._debug_context
 
 
 @pytest.fixture(autouse=True)
@@ -214,3 +220,32 @@ async def test_generate_workout_plan_validates_request_body() -> None:
     body = response.json()
     assert body["error"]["code"] == "REQUEST_VALIDATION_ERROR"
     assert body["request_id"]
+
+
+@pytest.mark.anyio
+async def test_generate_workout_plan_sets_retrieval_debug_headers() -> None:
+    app = create_app()
+    generator = FakeGenerator(result=WorkoutPlan.model_validate(valid_plan_payload()))
+    generator._debug_context = GenerationDebugContext(
+        retrieval_query="goal: fat_loss",
+        retrieved_chunks=[
+            RetrievedChunk(
+                chunk_id="doc-1::chunk-000",
+                document_id="doc-1",
+                title="Warm-up basics",
+                topic="warmup",
+                text="Start with 5 minutes of easy movement.",
+            )
+        ],
+    )
+    app.state.workout_plan_generator = generator
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://testserver",
+    ) as client:
+        response = await client.post("/generate/workout-plan", json=valid_profile_payload())
+
+    assert response.status_code == 200
+    assert response.headers["X-RAG-Chunk-Count"] == "1"
+    assert response.headers["X-RAG-Chunk-Ids"] == "doc-1::chunk-000"

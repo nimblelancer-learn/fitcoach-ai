@@ -2,8 +2,22 @@ import logging
 from time import perf_counter
 from typing import Any
 
-from openai import APITimeoutError, AsyncOpenAI, OpenAIError
 from pydantic import ValidationError
+
+try:
+    from openai import APITimeoutError, AsyncOpenAI, OpenAIError
+except ModuleNotFoundError:
+
+    class OpenAIError(Exception):
+        pass
+
+    class APITimeoutError(TimeoutError):
+        pass
+
+    class AsyncOpenAI:  # type: ignore[no-redef]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            raise ModuleNotFoundError("openai package is required for workout generation")
+
 
 from app.core.errors import AppError
 from app.core.settings import Settings

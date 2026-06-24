@@ -23,6 +23,7 @@ QDRANT_COLLECTION=fitcoach_knowledge
 RAG_EMBEDDING_PROVIDER=local-hash
 RAG_EMBEDDING_MODEL=text-embedding-3-small
 RAG_EMBEDDING_DIMENSIONS=256
+RAG_RETRIEVAL_LIMIT=3
 ```
 
 For local indexing without external credentials, the default
@@ -43,6 +44,12 @@ Build or refresh the knowledge-base collection:
 ```bash
 make reindex-kb
 ```
+
+Workout generation now queries the indexed knowledge base before calling the
+LLM. The `/generate/workout-plan` response includes:
+
+- `X-RAG-Chunk-Count`: how many chunks were injected into the grounded prompt
+- `X-RAG-Chunk-Ids`: up to the first three retrieved chunk IDs for debugging
 
 ## Test Commands
 

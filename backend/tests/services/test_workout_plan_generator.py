@@ -1,5 +1,6 @@
 import pytest
 
+from app.rag.retriever import RetrievedChunk
 from app.schemas import UserProfile, WorkoutPlan
 from app.services import WorkoutPlanGenerator
 
@@ -144,6 +145,21 @@ class FakeClient:
         return self._result
 
 
+class FakeRetriever:
+    def __init__(
+        self, chunks: list[RetrievedChunk] | None = None, error: Exception | None = None
+    ) -> None:
+        self._chunks = chunks or []
+        self._error = error
+        self.calls: list[str] = []
+
+    def retrieve(self, query_text: str, *, limit: int | None = None) -> list[RetrievedChunk]:
+        self.calls.append(query_text)
+        if self._error is not None:
+            raise self._error
+        return self._chunks
+
+
 @pytest.mark.asyncio
 async def test_generate_returns_client_plan() -> None:
     profile = UserProfile.model_validate(valid_profile_payload())
@@ -169,8 +185,13 @@ async def test_generate_builds_prompt_and_passes_messages(
         {"role": "user", "content": "user"},
     ]
 
-    def fake_build_workout_plan_prompt(received_profile: UserProfile) -> list[dict]:
+    def fake_build_workout_plan_prompt(
+        received_profile: UserProfile,
+        *,
+        retrieved_chunks: list[RetrievedChunk] | None = None,
+    ) -> list[dict]:
         assert received_profile == profile
+        assert retrieved_chunks == []
         return expected_messages
 
     monkeypatch.setattr(
@@ -182,3 +203,81 @@ async def test_generate_builds_prompt_and_passes_messages(
 
     assert result == plan
     assert client.calls == [expected_messages]
+
+
+@pytest.mark.asyncio
+async def test_generate_retrieves_context_and_exposes_debug_state(
+    monkeypatch,
+) -> None:
+    profile = UserProfile.model_validate(valid_profile_payload())
+    plan = WorkoutPlan.model_validate(valid_plan_payload())
+    client = FakeClient(plan)
+    retriever = FakeRetriever(
+        chunks=[
+            RetrievedChunk(
+                chunk_id="doc-1::chunk-000",
+                document_id="doc-1",
+                title="Warm-up basics",
+                topic="warmup",
+                text="Start with 5 minutes of easy movement.",
+            )
+        ]
+    )
+    service = WorkoutPlanGenerator(client, retriever=retriever)  # type: ignore[arg-type]
+
+    captured_kwargs: dict[str, object] = {}
+
+    def fake_build_workout_plan_prompt(
+        received_profile: UserProfile,
+        *,
+        retrieved_chunks: list[RetrievedChunk] | None = None,
+    ) -> list[dict]:
+        assert received_profile == profile
+        captured_kwargs["retrieved_chunks"] = retrieved_chunks
+        return [{"role": "system", "content": "system"}]
+
+    monkeypatch.setattr(
+        "app.services.workout_plan_generator.build_workout_plan_prompt",
+        fake_build_workout_plan_prompt,
+    )
+
+    result = await service.generate(profile)
+
+    assert result == plan
+    assert retriever.calls
+    assert captured_kwargs["retrieved_chunks"] == retriever._chunks
+    debug_context = service.get_last_debug_context()
+    assert debug_context.retrieved_chunks == retriever._chunks
+    assert "goal: fat_loss" in debug_context.retrieval_query
+
+
+@pytest.mark.asyncio
+async def test_generate_falls_back_to_prompt_without_context_when_retrieval_fails(
+    monkeypatch,
+) -> None:
+    profile = UserProfile.model_validate(valid_profile_payload())
+    plan = WorkoutPlan.model_validate(valid_plan_payload())
+    client = FakeClient(plan)
+    retriever = FakeRetriever(error=RuntimeError("qdrant unavailable"))
+    service = WorkoutPlanGenerator(client, retriever=retriever)  # type: ignore[arg-type]
+
+    captured_kwargs: dict[str, object] = {}
+
+    def fake_build_workout_plan_prompt(
+        received_profile: UserProfile,
+        *,
+        retrieved_chunks: list[RetrievedChunk] | None = None,
+    ) -> list[dict]:
+        assert received_profile == profile
+        captured_kwargs["retrieved_chunks"] = retrieved_chunks
+        return [{"role": "system", "content": "system"}]
+
+    monkeypatch.setattr(
+        "app.services.workout_plan_generator.build_workout_plan_prompt",
+        fake_build_workout_plan_prompt,
+    )
+
+    result = await service.generate(profile)
+
+    assert result == plan
+    assert captured_kwargs["retrieved_chunks"] == []
