@@ -61,6 +61,26 @@ class QdrantClient:
             },
         )
 
+    def search_points(self, query_vector: list[float], *, limit: int) -> list[dict[str, Any]]:
+        response = self._request_json(
+            "POST",
+            f"/collections/{self._settings.qdrant_collection}/points/query",
+            {
+                "query": query_vector,
+                "limit": limit,
+                "with_payload": True,
+            },
+        )
+        result = response.get("result", [])
+        if isinstance(result, dict):
+            points = result.get("points", [])
+            if isinstance(points, list):
+                return points
+            return []
+        if isinstance(result, list):
+            return result
+        return []
+
     def _request_json(
         self,
         method: str,

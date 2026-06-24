@@ -3,8 +3,16 @@ from __future__ import annotations
 import hashlib
 import math
 import re
+from typing import Any
 
-from openai import OpenAI
+try:
+    from openai import OpenAI
+except ModuleNotFoundError:
+
+    class OpenAI:  # type: ignore[no-redef]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            raise ModuleNotFoundError("openai package is required for OpenAI embeddings")
+
 
 from app.core.settings import Settings
 

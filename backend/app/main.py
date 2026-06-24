@@ -13,6 +13,7 @@ from app.core.settings import get_settings
 from app.learning.loader import load_learning_portal
 from app.llm.openai_client import OpenAIWorkoutPlanClient
 from app.middleware.request_logging import request_logging_middleware
+from app.rag.retriever import KnowledgeRetriever
 from app.services import WorkoutPlanGenerator
 
 logger = logging.getLogger(__name__)
@@ -49,7 +50,10 @@ def create_app() -> FastAPI:
     )
 
     app.state.settings = settings
-    app.state.workout_plan_generator = WorkoutPlanGenerator(OpenAIWorkoutPlanClient(settings))
+    app.state.workout_plan_generator = WorkoutPlanGenerator(
+        OpenAIWorkoutPlanClient(settings),
+        KnowledgeRetriever(settings),
+    )
 
     app.middleware("http")(request_logging_middleware)
     register_exception_handlers(app)

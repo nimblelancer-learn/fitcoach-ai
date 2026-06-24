@@ -1,4 +1,16 @@
+from typing import Protocol
+
 from app.schemas import UserProfile
+
+
+class GroundingChunk(Protocol):
+    chunk_id: str
+    document_id: str
+    title: str
+    topic: str
+    text: str
+    section_path: list[str] | None
+
 
 WORKOUT_PLAN_SYSTEM_INSTRUCTION = "".join(
     [
@@ -16,6 +28,8 @@ WORKOUT_PLAN_SYSTEM_INSTRUCTION = "".join(
         "duration_seconds to null, and ensure reps_min <= reps_max. ",
         "For duration prescriptions, include duration_seconds and set reps_min and reps_max to "
         "null. ",
+        "Use retrieved knowledge context when it is relevant to the user profile and safety "
+        "constraints. ",
         "Do not output prose outside the structured response.",
     ]
 )
@@ -28,20 +42,39 @@ def _format_list(values: list[object]) -> str:
     return ", ".join(str(value) for value in values)
 
 
-def build_workout_plan_prompt(profile: UserProfile) -> list[dict]:
-    user_prompt = "\n".join(
-        [
-            "Create a workout plan from this user profile.",
-            f"goal: {profile.goal.value}",
-            f"experience_level: {profile.experience_level.value}",
-            f"training_days_per_week: {profile.training_days_per_week}",
-            f"session_duration_minutes: {profile.session_duration_minutes}",
-            f"equipment: {_format_list([item.value for item in profile.equipment])}",
-            f"training_location: {profile.training_location.value}",
-            f"injuries_or_limitations: {_format_list(profile.injuries_or_limitations)}",
-            f"exercise_preferences: {_format_list(profile.exercise_preferences)}",
-        ]
-    )
+def _format_grounding_context(retrieved_chunks: list[GroundingChunk]) -> str:
+    lines: list[str] = ["Retrieved knowledge context:"]
+    for index, chunk in enumerate(retrieved_chunks, start=1):
+        location = " > ".join(chunk.section_path or [])
+        header = (
+            f"[{index}] chunk_id={chunk.chunk_id}; title={chunk.title}; topic={chunk.topic}; "
+            f"document_id={chunk.document_id}"
+        )
+        if location:
+            header = f"{header}; section_path={location}"
+        lines.extend([header, chunk.text])
+    return "\n".join(lines)
+
+
+def build_workout_plan_prompt(
+    profile: UserProfile,
+    *,
+    retrieved_chunks: list[GroundingChunk] | None = None,
+) -> list[dict]:
+    prompt_lines = [
+        "Create a workout plan from this user profile.",
+        f"goal: {profile.goal.value}",
+        f"experience_level: {profile.experience_level.value}",
+        f"training_days_per_week: {profile.training_days_per_week}",
+        f"session_duration_minutes: {profile.session_duration_minutes}",
+        f"equipment: {_format_list([item.value for item in profile.equipment])}",
+        f"training_location: {profile.training_location.value}",
+        f"injuries_or_limitations: {_format_list(profile.injuries_or_limitations)}",
+        f"exercise_preferences: {_format_list(profile.exercise_preferences)}",
+    ]
+    if retrieved_chunks:
+        prompt_lines.extend(["", _format_grounding_context(retrieved_chunks)])
+    user_prompt = "\n".join(prompt_lines)
 
     return [
         {

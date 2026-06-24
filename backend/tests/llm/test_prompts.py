@@ -2,6 +2,7 @@ from app.llm.prompts import (
     WORKOUT_PLAN_SYSTEM_INSTRUCTION,
     build_workout_plan_prompt,
 )
+from app.rag.retriever import RetrievedChunk
 from app.schemas import UserProfile
 
 
@@ -81,3 +82,26 @@ def test_build_workout_plan_prompt_uses_none_for_empty_lists() -> None:
 
     assert "injuries_or_limitations: none" in prompt[1]["content"]
     assert "exercise_preferences: none" in prompt[1]["content"]
+
+
+def test_build_workout_plan_prompt_appends_grounding_context() -> None:
+    profile = UserProfile.model_validate(valid_profile_payload())
+
+    prompt = build_workout_plan_prompt(
+        profile,
+        retrieved_chunks=[
+            RetrievedChunk(
+                chunk_id="doc-1::chunk-000",
+                document_id="doc-1",
+                title="Warm-up basics",
+                topic="warmup",
+                text="Start with 5 minutes of easy movement before lifting.",
+                section_path=["Warm-up", "Basics"],
+            )
+        ],
+    )
+
+    assert "Retrieved knowledge context:" in prompt[1]["content"]
+    assert "chunk_id=doc-1::chunk-000" in prompt[1]["content"]
+    assert "section_path=Warm-up > Basics" in prompt[1]["content"]
+    assert "Start with 5 minutes of easy movement before lifting." in prompt[1]["content"]

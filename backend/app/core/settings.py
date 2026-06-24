@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     rag_embedding_provider: str = "local-hash"
     rag_embedding_model: str = "text-embedding-3-small"
     rag_embedding_dimensions: int = 256
+    rag_retrieval_limit: int = 3
 
     model_config = SettingsConfigDict(
         env_file=".env",
