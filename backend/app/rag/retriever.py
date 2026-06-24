@@ -32,13 +32,23 @@ class KnowledgeRetriever:
         self._embedding_client = embedding_client or EmbeddingClient(settings)
         self._qdrant_client = qdrant_client or QdrantClient(settings)
 
-    def retrieve(self, query_text: str, *, limit: int | None = None) -> list[RetrievedChunk]:
+    def retrieve(
+        self,
+        query_text: str,
+        *,
+        limit: int | None = None,
+        metadata_filter: dict[str, str] | None = None,
+    ) -> list[RetrievedChunk]:
         effective_limit = limit or self._settings.rag_retrieval_limit
         if effective_limit <= 0 or not query_text.strip():
             return []
 
         query_vector = self._embedding_client.embed_texts([query_text])[0]
-        matches = self._qdrant_client.search_points(query_vector, limit=effective_limit)
+        matches = self._qdrant_client.search_points(
+            query_vector,
+            limit=effective_limit,
+            metadata_filter=metadata_filter,
+        )
 
         retrieved: list[RetrievedChunk] = []
         for match in matches:

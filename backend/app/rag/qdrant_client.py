@@ -61,15 +61,26 @@ class QdrantClient:
             },
         )
 
-    def search_points(self, query_vector: list[float], *, limit: int) -> list[dict[str, Any]]:
+    def search_points(
+        self,
+        query_vector: list[float],
+        *,
+        limit: int,
+        metadata_filter: dict[str, str] | None = None,
+    ) -> list[dict[str, Any]]:
+        payload: dict[str, Any] = {
+            "query": query_vector,
+            "limit": limit,
+            "with_payload": True,
+        }
+        qdrant_filter = _build_qdrant_filter(metadata_filter)
+        if qdrant_filter is not None:
+            payload["filter"] = qdrant_filter
+
         response = self._request_json(
             "POST",
             f"/collections/{self._settings.qdrant_collection}/points/query",
-            {
-                "query": query_vector,
-                "limit": limit,
-                "with_payload": True,
-            },
+            payload,
         )
         result = response.get("result", [])
         if isinstance(result, dict):
@@ -102,3 +113,27 @@ class QdrantClient:
         if not response_body:
             return {}
         return json.loads(response_body)
+
+
+def _build_qdrant_filter(
+    metadata_filter: dict[str, str] | None,
+) -> dict[str, list[dict[str, Any]]] | None:
+    if not metadata_filter:
+        return None
+
+    must: list[dict[str, Any]] = []
+    for key, value in metadata_filter.items():
+        if not key or not value:
+            continue
+        must.append(
+            {
+                "key": key,
+                "match": {
+                    "value": value,
+                },
+            }
+        )
+
+    if not must:
+        return None
+    return {"must": must}
