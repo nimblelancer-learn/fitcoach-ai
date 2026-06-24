@@ -17,6 +17,31 @@ OPENAI_TIMEOUT_SECONDS=20
 OPENAI_INVALID_OUTPUT_RETRIES=2
 OPENAI_INPUT_COST_PER_MILLION_TOKENS_USD=
 OPENAI_OUTPUT_COST_PER_MILLION_TOKENS_USD=
+QDRANT_URL=http://localhost:6333
+QDRANT_API_KEY=
+QDRANT_COLLECTION=fitcoach_knowledge
+RAG_EMBEDDING_PROVIDER=local-hash
+RAG_EMBEDDING_MODEL=text-embedding-3-small
+RAG_EMBEDDING_DIMENSIONS=256
+```
+
+For local indexing without external credentials, the default
+`RAG_EMBEDDING_PROVIDER=local-hash` uses a deterministic hash-based embedder.
+Switch to `RAG_EMBEDDING_PROVIDER=openai` when `OPENAI_API_KEY` is configured
+and you want real provider embeddings.
+
+## Local Qdrant indexing
+
+Start Qdrant:
+
+```bash
+make qdrant-up
+```
+
+Build or refresh the knowledge-base collection:
+
+```bash
+make reindex-kb
 ```
 
 ## Test Commands

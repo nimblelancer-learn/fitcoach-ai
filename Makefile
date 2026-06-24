@@ -3,7 +3,7 @@ IMAGE_NAME := fitcoach-api:local
 COMPOSE := docker compose
 PORT ?= 8000
 
-.PHONY: help install run test lint format check qdrant-up qdrant-down qdrant-logs docker-build docker-run hooks pre-commit
+.PHONY: help install run test lint format check qdrant-up qdrant-down qdrant-logs reindex-kb docker-build docker-run hooks pre-commit
 
 help:
 	@echo "make install       Sync Python dependencies"
@@ -15,6 +15,7 @@ help:
 	@echo "make qdrant-up     Start local Qdrant"
 	@echo "make qdrant-down   Stop local Qdrant"
 	@echo "make qdrant-logs   Follow Qdrant logs"
+	@echo "make reindex-kb    Rebuild chunk embeddings into Qdrant"
 	@echo "make docker-build  Build FastAPI Docker image"
 	@echo "make docker-run    Run FastAPI from Docker image"
 	@echo "make hooks         Install Git pre-commit hook"
@@ -45,6 +46,9 @@ qdrant-down:
 
 qdrant-logs:
 	$(COMPOSE) logs -f qdrant
+
+reindex-kb:
+	cd $(BACKEND_DIR) && uv run python -m app.rag.index
 
 docker-build:
 	docker build -t $(IMAGE_NAME) $(BACKEND_DIR)

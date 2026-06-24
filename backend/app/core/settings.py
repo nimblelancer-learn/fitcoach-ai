@@ -11,6 +11,12 @@ class Settings(BaseSettings):
     openai_invalid_output_retries: int = 2
     openai_input_cost_per_million_tokens_usd: float | None = None
     openai_output_cost_per_million_tokens_usd: float | None = None
+    qdrant_url: str = "http://localhost:6333"
+    qdrant_api_key: str | None = None
+    qdrant_collection: str = "fitcoach_knowledge"
+    rag_embedding_provider: str = "local-hash"
+    rag_embedding_model: str = "text-embedding-3-small"
+    rag_embedding_dimensions: int = 256
 
     model_config = SettingsConfigDict(
         env_file=".env",
