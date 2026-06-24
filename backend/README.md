@@ -31,6 +31,8 @@ For local indexing without external credentials, the default
 Switch to `RAG_EMBEDDING_PROVIDER=openai` when `OPENAI_API_KEY` is configured
 and you want real provider embeddings.
 
+The repo's safety boundary and medical-scope policy lives in `../docs/safety-policy.md`.
+
 ## Local Qdrant indexing
 
 Start Qdrant:

@@ -45,6 +45,14 @@ def test_system_instruction_covers_required_output_rules() -> None:
     assert "Use null for nullable fields" in WORKOUT_PLAN_SYSTEM_INSTRUCTION
 
 
+def test_system_instruction_defines_medical_boundary_and_fallback() -> None:
+    assert "general fitness only" in WORKOUT_PLAN_SYSTEM_INSTRUCTION
+    assert "Do not provide rehabilitation protocols" in WORKOUT_PLAN_SYSTEM_INSTRUCTION
+    assert "red-flag symptoms such as chest pain" in WORKOUT_PLAN_SYSTEM_INSTRUCTION
+    assert "structured safety warnings" in WORKOUT_PLAN_SYSTEM_INSTRUCTION
+    assert "professional assessment" in WORKOUT_PLAN_SYSTEM_INSTRUCTION
+
+
 def test_build_workout_plan_prompt_maps_all_profile_fields() -> None:
     profile = UserProfile.model_validate(valid_profile_payload())
 

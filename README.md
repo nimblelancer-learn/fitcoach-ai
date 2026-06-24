@@ -21,6 +21,8 @@ Many fitness beginners do not know how to create a workout plan that matches the
 
 FitCoach AI explores how an LLM-powered assistant can generate structured and safer workout plans grounded in a curated fitness knowledge base.
 
+The current repo-level safety boundary is documented in [docs/safety-policy.md](docs/safety-policy.md).
+
 ## Target Users
 
 - Fitness beginners
@@ -107,6 +109,14 @@ uv run pytest tests -q
 ```
 
 The real OpenAI integration test is opt-in and guarded by environment variables.
+
+## Safety Boundary
+
+Safety policy v1 lives in `docs/safety-policy.md`.
+
+- General fitness coaching is in scope.
+- Medical advice, diagnosis, treatment, and rehabilitation programming are out of scope.
+- Red-flag symptom scenarios should route toward conservative output and professional clearance, not improvised coaching.
 
 ## Knowledge Base Assets
 
