@@ -33,6 +33,21 @@ and you want real provider embeddings.
 
 The repo's safety boundary and medical-scope policy lives in `../docs/safety-policy.md`.
 
+## Runtime safety guardrails
+
+The current backend also applies a lightweight safety layer at the OpenAI client
+boundary.
+
+- high-risk medical or rehabilitation keywords in the prompt can short-circuit
+  into a conservative structured fallback plan
+- beginner plans are rejected if they contain `high` intensity prescriptions
+- beginner plans are rejected if they contain a small denylist of clearly risky
+  exercise names such as Olympic-lift or max-sprint patterns
+- safety trigger events are logged with stable trigger codes for debugging
+
+These are intentionally basic v1 guardrails. They do not replace clinical
+screening or comprehensive policy enforcement.
+
 ## Local Qdrant indexing
 
 Start Qdrant:

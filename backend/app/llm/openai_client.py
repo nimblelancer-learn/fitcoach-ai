@@ -1,4 +1,5 @@
 import logging
+import re
 from time import perf_counter
 from typing import Any
 
@@ -40,6 +41,32 @@ from app.schemas.workout_plan import (
 
 logger = logging.getLogger(__name__)
 
+MEDICAL_TRIGGER_PATTERNS = (
+    "chest pain",
+    "fainting",
+    "near-fainting",
+    "severe dizziness",
+    "sudden severe shortness of breath",
+    "rehab",
+    "rehabilitation",
+    "physical therapy",
+    "post-surgery",
+    "post surgery",
+    "fracture",
+    "dislocation",
+    "diagnosed",
+    "torn acl",
+)
+
+UNSAFE_BEGINNER_EXERCISE_PATTERNS = (
+    "barbell snatch",
+    "clean and jerk",
+    "depth jump",
+    "box jump",
+    "max sprint",
+    "suicide sprint",
+)
+
 
 class OpenAIWorkoutPlanClient:
     def __init__(self, settings: Settings) -> None:
@@ -69,6 +96,14 @@ class OpenAIWorkoutPlanClient:
     async def generate_workout_plan(self, messages: list[dict]) -> WorkoutPlan:
         client = self._get_client()
         max_attempts = self._settings.openai_invalid_output_retries + 1
+        prompt_trigger_codes = _detect_prompt_safety_trigger_codes(messages)
+
+        if prompt_trigger_codes:
+            _log_safety_trigger_event(stage="pre_request", trigger_codes=prompt_trigger_codes)
+            return _build_safety_fallback_workout_plan(
+                messages,
+                trigger_codes=prompt_trigger_codes,
+            )
 
         logger.info(
             "openai_workout_plan_request model=%s goal=%s training_days_per_week=%s",
@@ -177,7 +212,7 @@ class OpenAIWorkoutPlanClient:
                 )
 
             try:
-                return _validate_parsed_workout_plan(response)
+                plan = _validate_parsed_workout_plan(response)
             except AppError as exc:
                 last_invalid_output_error = exc
                 logger.warning(
@@ -193,6 +228,17 @@ class OpenAIWorkoutPlanClient:
 
                 if attempt < max_attempts:
                     continue
+            else:
+                plan_trigger_codes = _detect_plan_safety_trigger_codes(plan)
+                if plan_trigger_codes:
+                    _log_safety_trigger_event(
+                        stage="post_validation", trigger_codes=plan_trigger_codes
+                    )
+                    return _build_safety_fallback_workout_plan(
+                        messages,
+                        trigger_codes=plan_trigger_codes,
+                    )
+                return plan
 
         logger.warning(
             "openai_workout_plan_fallback model=%s attempts=%s reason=%s",
@@ -436,6 +482,100 @@ def _build_fallback_workout_plan(messages: list[dict]) -> WorkoutPlan:
     )
 
 
+def _build_safety_fallback_workout_plan(
+    messages: list[dict],
+    *,
+    trigger_codes: list[str],
+) -> WorkoutPlan:
+    goal = _parse_fitness_goal(_extract_prompt_field(messages, "goal"))
+    experience_level = _parse_experience_level(_extract_prompt_field(messages, "experience_level"))
+    training_days_per_week = _parse_training_days_per_week(
+        _extract_prompt_field(messages, "training_days_per_week")
+    )
+
+    weekly_schedule = []
+    for day_index in range(1, training_days_per_week + 1):
+        weekly_schedule.append(
+            {
+                "day_index": day_index,
+                "title": f"Day {day_index} - Safety-First Recovery Session",
+                "focus": "Professional-clearance placeholder",
+                "estimated_duration_minutes": 15,
+                "warm_up": [
+                    "Pause and assess whether symptoms or medical concerns are still active.",
+                ],
+                "exercises": [
+                    {
+                        "name": "Easy Walk",
+                        "category": ExerciseCategory.CARDIO,
+                        "prescription_type": PrescriptionType.DURATION,
+                        "sets": 1,
+                        "reps_min": None,
+                        "reps_max": None,
+                        "duration_seconds": 900,
+                        "rest_seconds": None,
+                        "intensity": Intensity.LOW,
+                        "target_muscles": ["cardiovascular system"],
+                        "instructions": [
+                            "Only continue if symptoms are absent and a clinician "
+                            "has not restricted activity.",
+                        ],
+                        "safety_notes": [
+                            "Stop immediately if symptoms return or worsen.",
+                        ],
+                        "alternatives": [
+                            "Gentle breathing practice",
+                        ],
+                    }
+                ],
+                "cool_down": [
+                    "Stop the session and seek professional advice if anything "
+                    "feels medically concerning.",
+                ],
+                "intensity_note": (
+                    "This temporary plan is intentionally minimal and should not "
+                    "replace medical clearance."
+                ),
+            }
+        )
+
+    return WorkoutPlan.model_validate(
+        {
+            "title": "Safety-First Fallback Plan",
+            "summary": (
+                "A conservative placeholder plan returned because the request or generated output "
+                "triggered safety guardrails."
+            ),
+            "goal": goal,
+            "experience_level": experience_level,
+            "training_days_per_week": training_days_per_week,
+            "duration_weeks": 1,
+            "weekly_schedule": weekly_schedule,
+            "progression_suggestion": (
+                "Do not progress training until symptoms, medical questions, "
+                "or unsafe plan details have been reviewed appropriately."
+            ),
+            "safety_warnings": [
+                {
+                    "code": SafetyWarningCode.MEDICAL_REFERRAL,
+                    "severity": WarningSeverity.STOP,
+                    "message": (
+                        "Safety guardrails were triggered by medical-risk or "
+                        "unsafe-training signals: "
+                        f"{', '.join(trigger_codes)}."
+                    ),
+                    "recommended_action": (
+                        "Pause normal training progression and seek professional "
+                        "clearance before using a full workout plan."
+                    ),
+                    "applies_to_exercise": None,
+                    "requires_professional_clearance": True,
+                }
+            ],
+        }
+    )
+
+
 def _parse_fitness_goal(value: str | None) -> FitnessGoal:
     if value is None:
         return FitnessGoal.GENERAL_FITNESS
@@ -472,3 +612,40 @@ def _parse_session_duration_minutes(value: str | None) -> int:
         parsed = 30
 
     return min(max(parsed, 15), 180)
+
+
+def _detect_prompt_safety_trigger_codes(messages: list[dict]) -> list[str]:
+    combined_prompt = "\n".join(
+        content for message in messages if isinstance((content := message.get("content")), str)
+    ).lower()
+
+    trigger_codes: list[str] = []
+    for pattern in MEDICAL_TRIGGER_PATTERNS:
+        if re.search(rf"\b{re.escape(pattern)}\b", combined_prompt):
+            trigger_codes.append(f"medical_keyword:{pattern}")
+
+    return sorted(set(trigger_codes))
+
+
+def _detect_plan_safety_trigger_codes(plan: WorkoutPlan) -> list[str]:
+    trigger_codes: list[str] = []
+    if plan.experience_level == ExperienceLevel.BEGINNER:
+        for day in plan.weekly_schedule:
+            for exercise in day.exercises:
+                if exercise.intensity == Intensity.HIGH:
+                    trigger_codes.append("beginner_intensity:high")
+
+                normalized_name = exercise.name.lower()
+                for pattern in UNSAFE_BEGINNER_EXERCISE_PATTERNS:
+                    if pattern in normalized_name:
+                        trigger_codes.append(f"unsafe_exercise:{pattern}")
+
+    return sorted(set(trigger_codes))
+
+
+def _log_safety_trigger_event(*, stage: str, trigger_codes: list[str]) -> None:
+    logger.warning(
+        "workout_plan_safety_trigger stage=%s trigger_codes=%s",
+        stage,
+        trigger_codes,
+    )
