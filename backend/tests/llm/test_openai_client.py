@@ -3,10 +3,10 @@ from collections.abc import Sequence
 from types import SimpleNamespace
 
 import pytest
-from openai import APITimeoutError, OpenAIError
 
 from app.core.errors import AppError
 from app.core.settings import Settings
+from app.llm import openai_client as openai_client_module
 from app.llm.openai_client import OpenAIWorkoutPlanClient
 from app.llm.pricing import (
     estimate_request_cost_from_pricing_usd,
@@ -93,6 +93,24 @@ def sample_messages() -> list[dict]:
             "role": "user",
             "content": (
                 "goal: fat_loss\ntraining_days_per_week: 3\nequipment: bodyweight, dumbbells"
+            ),
+        },
+    ]
+
+
+def medical_risk_messages() -> list[dict]:
+    return [
+        {
+            "role": "system",
+            "content": "Follow the WorkoutPlan schema exactly.",
+        },
+        {
+            "role": "user",
+            "content": (
+                "goal: fat_loss\n"
+                "experience_level: beginner\n"
+                "training_days_per_week: 3\n"
+                "injuries_or_limitations: chest pain after exercise"
             ),
         },
     ]
@@ -309,8 +327,41 @@ async def test_generate_workout_plan_rejects_missing_parsed_output() -> None:
 
 
 @pytest.mark.asyncio
+async def test_generate_workout_plan_short_circuits_medical_keyword_triggers(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level("WARNING")
+    fake_client = FakeAsyncClient(
+        result=SimpleNamespace(
+            model="gpt-4.1-mini",
+            output=[],
+            output_parsed=WorkoutPlan.model_validate(valid_plan_payload()),
+            usage=None,
+        )
+    )
+
+    client = OpenAIWorkoutPlanClient(
+        Settings(
+            _env_file=None,
+            openai_api_key="test-key",
+            openai_model="gpt-4.1-mini",
+        )
+    )
+    client._client = fake_client
+
+    plan = await client.generate_workout_plan(medical_risk_messages())
+
+    assert plan.title == "Safety-First Fallback Plan"
+    assert plan.safety_warnings[0].code.value == "medical_referral"
+    assert plan.safety_warnings[0].requires_professional_clearance is True
+    assert fake_client.responses.calls == []
+    assert "workout_plan_safety_trigger" in caplog.text
+    assert "medical_keyword:chest pain" in caplog.text
+
+
+@pytest.mark.asyncio
 async def test_generate_workout_plan_maps_sdk_errors_to_app_error() -> None:
-    fake_client = FakeAsyncClient(error=OpenAIError("boom"))
+    fake_client = FakeAsyncClient(error=openai_client_module.OpenAIError("boom"))
 
     client = OpenAIWorkoutPlanClient(
         Settings(
@@ -361,7 +412,7 @@ async def test_generate_workout_plan_maps_invalid_parsed_data_to_app_error() -> 
 
 @pytest.mark.asyncio
 async def test_generate_workout_plan_maps_timeout_to_app_error() -> None:
-    fake_client = FakeAsyncClient(error=APITimeoutError(request=None))
+    fake_client = FakeAsyncClient(error=TimeoutError("timeout"))
 
     client = OpenAIWorkoutPlanClient(
         Settings(
@@ -411,6 +462,64 @@ async def test_generate_workout_plan_logs_usage_metrics(
     assert "input_tokens=1000" in caplog.text
     assert "output_tokens=500" in caplog.text
     assert "estimated_cost_usd=0.00125000" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_generate_workout_plan_replaces_high_intensity_beginner_plan_with_safety_fallback(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level("WARNING")
+    unsafe_payload = valid_plan_payload()
+    unsafe_payload["weekly_schedule"][0]["exercises"][0]["intensity"] = "high"
+    fake_client = FakeAsyncClient(
+        result=SimpleNamespace(
+            model="gpt-4.1-mini",
+            output=[],
+            output_parsed=unsafe_payload,
+            usage=None,
+        )
+    )
+    client = OpenAIWorkoutPlanClient(
+        Settings(
+            _env_file=None,
+            openai_api_key="test-key",
+            openai_model="gpt-4.1-mini",
+        )
+    )
+    client._client = fake_client
+
+    plan = await client.generate_workout_plan(sample_messages())
+
+    assert plan.title == "Safety-First Fallback Plan"
+    assert "beginner_intensity:high" in plan.safety_warnings[0].message
+    assert "workout_plan_safety_trigger" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_generate_workout_plan_replaces_unsafe_exercise_with_safety_fallback() -> None:
+    unsafe_payload = valid_plan_payload()
+    unsafe_payload["weekly_schedule"][0]["exercises"][0]["name"] = "Barbell Snatch"
+    fake_client = FakeAsyncClient(
+        result=SimpleNamespace(
+            model="gpt-4.1-mini",
+            output=[],
+            output_parsed=unsafe_payload,
+            usage=None,
+        )
+    )
+    client = OpenAIWorkoutPlanClient(
+        Settings(
+            _env_file=None,
+            openai_api_key="test-key",
+            openai_model="gpt-4.1-mini",
+        )
+    )
+    client._client = fake_client
+
+    plan = await client.generate_workout_plan(sample_messages())
+
+    assert plan.title == "Safety-First Fallback Plan"
+    assert "unsafe_exercise:barbell snatch" in plan.safety_warnings[0].message
 
 
 @pytest.mark.asyncio
