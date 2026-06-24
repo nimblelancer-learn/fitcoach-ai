@@ -113,8 +113,22 @@ The real OpenAI integration test is opt-in and guarded by environment variables.
 The starter retrieval corpus lives in `knowledge_base/`.
 
 - `knowledge_base/raw/` stores chunk-ready markdown documents grouped by topic.
+- `knowledge_base/processed/chunks-v1.json` stores the current normalized chunk
+  artifact checked into the repo.
 - `knowledge_base/source-policy.md` defines what sources may enter the corpus.
 - `knowledge_base/sources.md` tracks document provenance for later RAG work.
+
+To regenerate the processed chunk artifact locally:
+
+```bash
+cd backend
+uv run python -m app.rag.chunking
+```
+
+The chunking pass is deterministic and heading-aware. It preserves each raw
+document's front-matter metadata, emits stable `chunk_id` values, and stores
+the resulting JSON in a predictable location so later embedding and retrieval
+steps can consume it without extra normalization work.
 
 ## Roadmap
 
