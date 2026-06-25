@@ -9,3 +9,10 @@ This directory stores the first checked-in evaluation artifacts for FitCoach AI.
 
 The files are intentionally machine-readable so later issues can build a local
 or provider-backed eval runner without reformatting the source data first.
+
+Run the live eval runner with:
+
+```bash
+cd backend
+uv run python -m app.evals.runner --output reports/eval-report.md --report-format markdown
+```
