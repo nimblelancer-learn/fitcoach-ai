@@ -116,6 +116,42 @@ def medical_risk_messages() -> list[dict]:
     ]
 
 
+def mild_injury_messages() -> list[dict]:
+    return [
+        {
+            "role": "system",
+            "content": "Follow the WorkoutPlan schema exactly.",
+        },
+        {
+            "role": "user",
+            "content": (
+                "goal: fat_loss\n"
+                "experience_level: beginner\n"
+                "training_days_per_week: 3\n"
+                "injuries_or_limitations: occasional knee discomfort when squatting deeply"
+            ),
+        },
+    ]
+
+
+def rehab_risk_messages() -> list[dict]:
+    return [
+        {
+            "role": "system",
+            "content": "Follow the WorkoutPlan schema exactly.",
+        },
+        {
+            "role": "user",
+            "content": (
+                "goal: general_fitness\n"
+                "experience_level: beginner\n"
+                "training_days_per_week: 2\n"
+                "injuries_or_limitations: need a rehabilitation plan after fracture"
+            ),
+        },
+    ]
+
+
 class FakeResponses:
     def __init__(
         self,
@@ -360,6 +396,61 @@ async def test_generate_workout_plan_short_circuits_medical_keyword_triggers(
 
 
 @pytest.mark.asyncio
+async def test_generate_workout_plan_allows_mild_injury_limitations() -> None:
+    fake_client = FakeAsyncClient(
+        result=SimpleNamespace(
+            model="gpt-4.1-mini",
+            output=[],
+            output_parsed=WorkoutPlan.model_validate(valid_plan_payload()),
+            usage=None,
+        )
+    )
+
+    client = OpenAIWorkoutPlanClient(
+        Settings(
+            _env_file=None,
+            openai_api_key="test-key",
+            openai_model="gpt-4.1-mini",
+        )
+    )
+    client._client = fake_client
+
+    plan = await client.generate_workout_plan(mild_injury_messages())
+
+    assert plan.title == "3-Day Beginner Home Strength Plan"
+    assert len(fake_client.responses.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_generate_workout_plan_short_circuits_rehabilitation_medical_risk() -> None:
+    fake_client = FakeAsyncClient(
+        result=SimpleNamespace(
+            model="gpt-4.1-mini",
+            output=[],
+            output_parsed=WorkoutPlan.model_validate(valid_plan_payload()),
+            usage=None,
+        )
+    )
+
+    client = OpenAIWorkoutPlanClient(
+        Settings(
+            _env_file=None,
+            openai_api_key="test-key",
+            openai_model="gpt-4.1-mini",
+        )
+    )
+    client._client = fake_client
+
+    plan = await client.generate_workout_plan(rehab_risk_messages())
+
+    assert plan.title == "Safety-First Fallback Plan"
+    assert plan.training_days_per_week == 2
+    assert fake_client.responses.calls == []
+    assert "medical_keyword:rehabilitation" in plan.safety_warnings[0].message
+    assert "medical_keyword:fracture" in plan.safety_warnings[0].message
+
+
+@pytest.mark.asyncio
 async def test_generate_workout_plan_maps_sdk_errors_to_app_error() -> None:
     fake_client = FakeAsyncClient(error=openai_client_module.OpenAIError("boom"))
 
@@ -496,6 +587,35 @@ async def test_generate_workout_plan_replaces_high_intensity_beginner_plan_with_
 
 
 @pytest.mark.asyncio
+async def test_generate_workout_plan_keeps_non_beginner_high_intensity_plan() -> None:
+    unsafe_payload = valid_plan_payload()
+    unsafe_payload["experience_level"] = "intermediate"
+    unsafe_payload["weekly_schedule"][0]["exercises"][0]["intensity"] = "high"
+    unsafe_payload["weekly_schedule"][0]["exercises"][0]["name"] = "Barbell Snatch"
+    fake_client = FakeAsyncClient(
+        result=SimpleNamespace(
+            model="gpt-4.1-mini",
+            output=[],
+            output_parsed=unsafe_payload,
+            usage=None,
+        )
+    )
+    client = OpenAIWorkoutPlanClient(
+        Settings(
+            _env_file=None,
+            openai_api_key="test-key",
+            openai_model="gpt-4.1-mini",
+        )
+    )
+    client._client = fake_client
+
+    plan = await client.generate_workout_plan(sample_messages())
+
+    assert plan.title == "3-Day Beginner Home Strength Plan"
+    assert plan.experience_level.value == "intermediate"
+
+
+@pytest.mark.asyncio
 async def test_generate_workout_plan_replaces_unsafe_exercise_with_safety_fallback() -> None:
     unsafe_payload = valid_plan_payload()
     unsafe_payload["weekly_schedule"][0]["exercises"][0]["name"] = "Barbell Snatch"
@@ -520,6 +640,38 @@ async def test_generate_workout_plan_replaces_unsafe_exercise_with_safety_fallba
 
     assert plan.title == "Safety-First Fallback Plan"
     assert "unsafe_exercise:barbell snatch" in plan.safety_warnings[0].message
+
+
+@pytest.mark.asyncio
+async def test_generate_workout_plan_safety_fallback_has_expected_placeholder_shape() -> None:
+    fake_client = FakeAsyncClient(
+        result=SimpleNamespace(
+            model="gpt-4.1-mini",
+            output=[],
+            output_parsed=WorkoutPlan.model_validate(valid_plan_payload()),
+            usage=None,
+        )
+    )
+    client = OpenAIWorkoutPlanClient(
+        Settings(
+            _env_file=None,
+            openai_api_key="test-key",
+            openai_model="gpt-4.1-mini",
+        )
+    )
+    client._client = fake_client
+
+    plan = await client.generate_workout_plan(medical_risk_messages())
+
+    assert plan.duration_weeks == 1
+    assert len(plan.weekly_schedule) == 3
+    assert plan.weekly_schedule[0].title == "Day 1 - Safety-First Recovery Session"
+    assert plan.weekly_schedule[0].estimated_duration_minutes == 15
+    assert plan.weekly_schedule[0].exercises[0].name == "Easy Walk"
+    assert plan.safety_warnings[0].code.value == "medical_referral"
+    assert plan.safety_warnings[0].recommended_action.startswith("Pause normal training")
+    assert plan.progression_suggestion.startswith("Do not progress training")
+    assert fake_client.responses.calls == []
 
 
 @pytest.mark.asyncio
