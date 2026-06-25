@@ -1,0 +1,47 @@
+slug = "eval-runner"
+title = "Eval runner"
+summary = "Explains the current local evaluation path from loading checked-in assets to generating workout plans, scoring them, and writing a report."
+why_it_matters = "This flow is the easiest way to learn how the repo currently measures generation quality outside the live API request path."
+when_to_read = "Read this after workout plan generation if you want to see how the repo turns quality expectations into repeatable local checks."
+related_modules = [
+  "evals-runner",
+  "llm-prompts",
+  "llm-openai-client",
+  "core-settings",
+]
+
+[[steps]]
+title = "The runner loads the checked-in dataset cases"
+description = "load_eval_dataset() reads workout_plan_eval_dataset_v1.json and validates each case into an EvalCase plus a real UserProfile model."
+module_path = "app.evals.runner"
+python_path = "app.evals.runner.load_eval_dataset"
+
+[[steps]]
+title = "The runner loads the scoring rubric"
+description = "load_eval_rubric() reads workout_plan_eval_rubric_v1.json so later scoring can reuse the allowed tags, weighted dimensions, and hard-fail rules."
+module_path = "app.evals.runner"
+python_path = "app.evals.runner.load_eval_rubric"
+
+[[steps]]
+title = "The CLI chooses the live generation path by default"
+description = "main() parses dataset, rubric, output path, format, and limit arguments, then _run_from_args() selects generate_plan_live as the generator function for the current local CLI workflow."
+module_path = "app.evals.runner"
+python_path = "app.evals.runner.main"
+
+[[steps]]
+title = "Each live case builds prompt messages and calls the OpenAI client"
+description = "generate_plan_live() creates a fresh OpenAIWorkoutPlanClient with Settings(), builds the prompt from the eval case input, and requests a WorkoutPlan through the same client used by request-time generation."
+module_path = "app.evals.runner"
+python_path = "app.evals.runner.generate_plan_live"
+
+[[steps]]
+title = "The main loop runs each case and scores the result"
+description = "run_eval_cases() awaits the generator for each case, then score_case() calculates schema validity, safety behavior, personalization, clarity, and any failed rules."
+module_path = "app.evals.runner"
+python_path = "app.evals.runner.run_eval_cases"
+
+[[steps]]
+title = "The runner formats and writes the final report"
+description = "After all cases finish, the runner chooses markdown or CSV output, writes the report to disk, and prints a short summary line with the case count and output path."
+module_path = "app.evals.runner"
+python_path = "app.evals.runner.build_markdown_report"

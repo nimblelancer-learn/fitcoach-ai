@@ -1,10 +1,11 @@
 slug = "workout-plan-generator"
 title = "app.services.workout_plan_generator"
 module_path = "app.services.workout_plan_generator"
-summary = "Builds workout-generation messages from a validated user profile and delegates the final model call to the OpenAI client."
-why_it_exists = "A small service layer keeps route code simple and gives the repo one explicit seam between HTTP handling and LLM integration."
+summary = "Builds a retrieval query from a validated user profile, gathers optional grounding chunks, then delegates the final model call to the OpenAI client."
+why_it_exists = "A small service layer keeps route code simple and gives the repo one explicit seam between HTTP handling, retrieval grounding, and LLM integration."
 when_it_runs = "When the workout generation route calls WorkoutPlanGenerator.generate()."
 dependencies = [
+  "app.rag.retriever.build_retrieval_query and KnowledgeRetriever for retrieval grounding.",
   "app.llm.prompts.build_workout_plan_prompt for message construction.",
   "app.llm.openai_client.OpenAIWorkoutPlanClient for the actual model request.",
   "app.schemas.UserProfile and WorkoutPlan for typed inputs and outputs.",
@@ -15,10 +16,12 @@ used_by = [
 ]
 safe_edit_notes = [
   "Keep orchestration here small; business rules that shape prompts belong in app.llm.prompts, while transport and retry behavior belong in app.llm.openai_client.",
+  "Retrieval failures currently degrade to a warning plus an ungrounded prompt instead of failing the request, so document any change to that tradeoff.",
   "If you add preprocessing or postprocessing here, update the workout generation flow so beginners still see the right execution order.",
 ]
 related_modules = [
   "routes-generate",
+  "rag-retriever",
   "llm-prompts",
   "llm-openai-client",
 ]
@@ -27,5 +30,5 @@ related_flows = ["workout-plan-generation"]
 [[key_functions]]
 name = "WorkoutPlanGenerator"
 python_path = "app.services.workout_plan_generator.WorkoutPlanGenerator"
-summary = "Holds the small orchestration seam that turns a UserProfile into prompt messages and delegates generation to the OpenAI client."
-why_it_matters = "The class is the narrow boundary between route handling and the LLM integration path."
+summary = "Holds the small orchestration seam that turns a UserProfile into a retrieval query, grounded prompt messages, and finally an OpenAI client call."
+why_it_matters = "The class is the narrow boundary between route handling and the grounded LLM integration path."

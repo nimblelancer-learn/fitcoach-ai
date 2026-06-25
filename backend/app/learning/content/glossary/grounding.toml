@@ -1,0 +1,5 @@
+slug = "grounding"
+term = "Grounding"
+definition = "Adding external context to a model prompt so the response can rely on concrete retrieved information instead of only the model's general prior knowledge."
+why_it_matters_in_repo = "FitCoach AI builds a retrieval query from the user profile, fetches knowledge chunks from Qdrant, and appends those chunks to the workout prompt when available. The route also exposes lightweight debug headers so developers can see whether grounding actually happened."
+related_modules = ["rag-retriever", "workout-plan-generator", "llm-prompts", "routes-generate"]

@@ -1,0 +1,5 @@
+slug = "safety-guardrail"
+term = "Safety guardrail"
+definition = "A runtime check that blocks, reshapes, or replaces output when the normal generation path would be unsafe for the application's scope."
+why_it_matters_in_repo = "This repo applies safety guardrails twice in the OpenAI client: once on the prompt before any model call, and again on the validated WorkoutPlan before returning it. Either path can replace normal generation with a structured Safety-First Fallback Plan."
+related_modules = ["llm-openai-client", "llm-prompts", "evals-runner"]

@@ -1,8 +1,8 @@
 slug = "llm-openai-client"
 title = "app.llm.openai_client"
 module_path = "app.llm.openai_client"
-summary = "Owns the OpenAI Responses API call, structured parsing, reliability handling, usage logging, and fallback workout generation."
-why_it_exists = "The repo needs one place to isolate model transport details and convert unpredictable LLM behavior into a stable WorkoutPlan contract."
+summary = "Owns the OpenAI Responses API call, structured parsing, runtime safety guardrails, reliability handling, usage logging, and fallback workout generation."
+why_it_exists = "The repo needs one place to isolate model transport details and convert unpredictable or unsafe LLM behavior into a stable WorkoutPlan contract."
 when_it_runs = "Whenever the workout generation service asks for a plan."
 dependencies = [
   "openai.AsyncOpenAI for the Responses API client.",
@@ -13,9 +13,11 @@ dependencies = [
 ]
 used_by = [
   "app.services.workout_plan_generator delegates every model request to this client.",
+  "app.evals.runner reuses this client when the local eval runner executes live cases.",
 ]
 safe_edit_notes = [
   "Keep transport failures, refusal handling, invalid-output retries, and fallback generation distinct because they communicate different failure modes to callers and logs.",
+  "Preserve the separation between pre-request safety checks, post-validation safety checks, and invalid-output fallback handling because they protect different parts of the generation path.",
   "If you change logged fields, retry limits, or fallback rules, update the workout generation flow and related glossary terms because those pages teach the current LLM handling strategy.",
 ]
 related_modules = [
@@ -24,6 +26,7 @@ related_modules = [
   "workout-plan-generator",
   "llm-prompts",
   "llm-pricing",
+  "evals-runner",
 ]
 related_flows = ["workout-plan-generation"]
 
@@ -44,3 +47,9 @@ name = "_build_fallback_workout_plan"
 python_path = "app.llm.openai_client._build_fallback_workout_plan"
 summary = "Creates a conservative backup WorkoutPlan when repeated invalid structured outputs exhaust the retry budget."
 why_it_matters = "This function explains how the repo stays available even when model output quality is unreliable."
+
+[[key_functions]]
+name = "_build_safety_fallback_workout_plan"
+python_path = "app.llm.openai_client._build_safety_fallback_workout_plan"
+summary = "Creates a safety-first placeholder WorkoutPlan when the request or validated plan triggers medical-risk or unsafe-training guardrails."
+why_it_matters = "This is the clearest place to see how the repo turns safety policy into a concrete structured response."

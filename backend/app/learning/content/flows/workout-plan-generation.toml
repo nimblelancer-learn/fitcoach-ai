@@ -1,11 +1,12 @@
 slug = "workout-plan-generation"
 title = "Workout plan generation"
-summary = "Walks through the current LLM-backed workout generation path from the POST route to structured response validation, usage logging, retries, and fallback behavior."
-why_it_matters = "This flow captures the repo's first real AI feature, so it is the main place to learn how FitCoach AI handles LLM responses safely."
+summary = "Walks through the current grounded LLM workout generation path from the POST route to retrieval, structured response validation, safety guardrails, retries, and response debug headers."
+why_it_matters = "This flow captures the repo's main AI feature, so it is the fastest way to learn how FitCoach AI combines retrieval, safety, and structured generation."
 when_to_read = "Read this after request lifecycle if you want the detailed execution order for the OpenAI-backed generation endpoint."
 related_modules = [
   "routes-generate",
   "workout-plan-generator",
+  "rag-retriever",
   "llm-prompts",
   "llm-openai-client",
   "llm-pricing",
@@ -19,14 +20,26 @@ module_path = "app.api.routes_generate"
 python_path = "app.api.routes_generate.generate_workout_plan"
 
 [[steps]]
-title = "The service builds the prompt messages"
-description = "WorkoutPlanGenerator.generate() delegates prompt construction to build_workout_plan_prompt(), which flattens the user profile into one system instruction plus one user message."
+title = "The service builds a retrieval query and tries to fetch grounding chunks"
+description = "WorkoutPlanGenerator.generate() first calls build_retrieval_query(), then asks KnowledgeRetriever.retrieve() for relevant chunks. Retrieval failures only log a warning, so request handling falls back to an ungrounded prompt instead of failing."
 module_path = "app.services.workout_plan_generator"
 python_path = "app.services.workout_plan_generator.WorkoutPlanGenerator"
 
 [[steps]]
+title = "Prompt construction appends retrieved context when grounding succeeds"
+description = "build_workout_plan_prompt() always includes the system instruction plus the flattened user profile, and appends a Retrieved knowledge context block only when retrieval returned one or more chunks."
+module_path = "app.llm.prompts"
+python_path = "app.llm.prompts.build_workout_plan_prompt"
+
+[[steps]]
+title = "Pre-request safety checks can short-circuit before any model call"
+description = "OpenAIWorkoutPlanClient.generate_workout_plan() scans the prompt text for medical-risk trigger patterns. If any are found, it logs a workout_plan_safety_trigger event and returns the structured Safety-First Fallback Plan immediately."
+module_path = "app.llm.openai_client"
+python_path = "app.llm.openai_client.OpenAIWorkoutPlanClient"
+
+[[steps]]
 title = "The OpenAI client logs request context before calling the model"
-description = "OpenAIWorkoutPlanClient.generate_workout_plan() logs the selected model plus a few extracted prompt fields such as goal and training_days_per_week before making the Responses API call."
+description = "If the safety pre-check passes, the client logs the selected model plus extracted prompt fields such as goal and training_days_per_week before making the Responses API call."
 module_path = "app.llm.openai_client"
 python_path = "app.llm.openai_client.OpenAIWorkoutPlanClient"
 
@@ -61,7 +74,19 @@ module_path = "app.llm.openai_client"
 python_path = "app.llm.openai_client.OpenAIWorkoutPlanClient"
 
 [[steps]]
+title = "Validated plans still pass one more safety check"
+description = "After WorkoutPlan validation succeeds, the client inspects the actual exercises and intensities. Unsafe beginner patterns such as high intensity or barbell snatch can still trigger a structured Safety-First Fallback Plan."
+module_path = "app.llm.openai_client"
+python_path = "app.llm.openai_client._detect_plan_safety_trigger_codes"
+
+[[steps]]
 title = "Exhausted retries fall back to a conservative plan"
 description = "When every structured attempt stays invalid, the client logs an openai_workout_plan_fallback event and returns a safe WorkoutPlan built from a few prompt fields rather than failing the whole endpoint."
 module_path = "app.llm.openai_client"
 python_path = "app.llm.openai_client._build_fallback_workout_plan"
+
+[[steps]]
+title = "The route adds lightweight retrieval debug headers to the response"
+description = "After generation completes, the route reads the generator's last debug context and returns X-RAG-Chunk-Count plus up to three X-RAG-Chunk-Ids values so a developer can confirm whether grounding was used."
+module_path = "app.api.routes_generate"
+python_path = "app.api.routes_generate.generate_workout_plan"

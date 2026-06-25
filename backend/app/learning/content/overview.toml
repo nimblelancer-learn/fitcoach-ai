@@ -3,7 +3,9 @@ intro = "This internal portal explains the current FastAPI backend in guided not
 high_level_notes = [
   "Start with app.main to see the app assembly order, then read the startup lifecycle flow before switching to request-time behavior.",
   "The startup path now depends on app.core.settings and the FastAPI lifespan hook, so those pages explain why configuration is resolved once before requests begin.",
-  "The backend now includes a real LLM request path for workout generation, so the portal should explain prompt building, structured parsing, retry decisions, and fallback behavior as one flow.",
+  "The workout generation path now includes retrieval grounding before the model call, so the portal should explain how user profile fields become both a retrieval query and a structured prompt.",
+  "The OpenAI client now enforces runtime safety guardrails before and after structured validation, so the learning notes should treat fallback behavior as both a reliability path and a safety path.",
+  "The repo also has a first local eval stack with a checked-in dataset, rubric, and runner, which gives beginners one concrete way to inspect how quality is measured outside request handling.",
   "The content is curated and validated against real Python modules and key functions so it fails loudly when references drift.",
   "Pages focus on module intent and a few important functions instead of trying to document every symbol in the codebase.",
 ]
@@ -11,11 +13,13 @@ featured_modules = [
   "app-main",
   "core-settings",
   "routes-generate",
+  "rag-retriever",
   "llm-openai-client",
-  "learning-loader",
+  "evals-runner",
 ]
 featured_flows = [
   "startup-lifecycle",
   "request-lifecycle",
   "workout-plan-generation",
+  "eval-runner",
 ]

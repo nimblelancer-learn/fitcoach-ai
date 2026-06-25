@@ -1,0 +1,44 @@
+slug = "evals-runner"
+title = "app.evals.runner"
+module_path = "app.evals.runner"
+summary = "Loads the checked-in eval dataset and rubric, executes workout-plan cases through a generator function, scores each result, and writes a markdown or CSV report."
+why_it_exists = "The repo needs one concrete local eval entry point so quality checks live in code instead of only in design docs."
+when_it_runs = "When a developer runs `python -m app.evals.runner` or when tests call the runner helpers directly."
+dependencies = [
+  "The JSON dataset and rubric files under app.evals.",
+  "app.llm.prompts.build_workout_plan_prompt and app.llm.openai_client.OpenAIWorkoutPlanClient for the live generation path.",
+  "app.schemas.UserProfile and WorkoutPlan for typed inputs and outputs.",
+  "argparse, asyncio, and simple file I/O helpers for the local CLI workflow.",
+]
+used_by = [
+  "Developers use this module to generate local eval reports from the current workout-generation stack.",
+  "Tests call its loaders, scoring helpers, and report builders directly to keep the eval contract stable.",
+]
+safe_edit_notes = [
+  "Keep the dataset/rubric loaders aligned with the checked-in JSON structure because drift here would silently break the local evaluation workflow.",
+  "The current live path builds prompts directly and does not inject retrieval context, so document any change to that contract if eval coverage expands.",
+]
+related_modules = [
+  "core-settings",
+  "llm-prompts",
+  "llm-openai-client",
+]
+related_flows = ["eval-runner"]
+
+[[key_functions]]
+name = "load_eval_dataset"
+python_path = "app.evals.runner.load_eval_dataset"
+summary = "Reads the checked-in dataset JSON and validates each case into the EvalCase dataclass plus UserProfile model."
+why_it_matters = "This is the first place to inspect if you want to understand what scenarios the repo currently evaluates."
+
+[[key_functions]]
+name = "run_eval_cases"
+python_path = "app.evals.runner.run_eval_cases"
+summary = "Executes each eval case through the supplied generator function, then scores the returned plan against the rubric."
+why_it_matters = "It shows the high-level evaluation loop without mixing in CLI parsing or report-format details."
+
+[[key_functions]]
+name = "score_case"
+python_path = "app.evals.runner.score_case"
+summary = "Computes schema, safety, personalization, and clarity scores and records any hard-fail rule breaches for one case."
+why_it_matters = "This function is the clearest summary of what the repo currently means by a good or bad workout-plan result."

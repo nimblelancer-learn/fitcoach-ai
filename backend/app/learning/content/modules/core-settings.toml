@@ -13,11 +13,14 @@ used_by = [
   "app.state.settings stores the resolved Settings object so startup and routes can reuse it.",
   "app.api.routes_learning checks the feature flag through request.app.state.settings.",
   "app.llm.openai_client reads model, timeout, retry, and optional pricing settings from this object.",
+  "app.rag.retriever reads Qdrant, embedding, and retrieval-limit settings from this object.",
+  "app.evals.runner uses Settings() for the live OpenAI-backed eval path.",
 ]
 safe_edit_notes = [
   "Keep field names aligned with the environment variable contract because changing them can silently disable settings overrides.",
   "If you add a new setting that affects startup behavior, update the startup flow so the one-time boot path stays accurate.",
   "If you add or rename OpenAI settings, update the workout generation flow because it documents which knobs affect retries, latency, and cost logging.",
+  "If you change RAG or Qdrant settings, update the retriever module page and workout generation flow so the grounding path does not drift.",
 ]
 related_modules = [
   "app-main",
@@ -25,8 +28,10 @@ related_modules = [
   "learning-loader",
   "llm-openai-client",
   "llm-pricing",
+  "rag-retriever",
+  "evals-runner",
 ]
-related_flows = ["startup-lifecycle", "workout-plan-generation"]
+related_flows = ["startup-lifecycle", "workout-plan-generation", "eval-runner"]
 
 [[key_functions]]
 name = "Settings"

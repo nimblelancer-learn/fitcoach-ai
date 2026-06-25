@@ -40,7 +40,7 @@ python_path = "app.main.lifespan"
 
 [[steps]]
 title = "Application state stores the resolved settings"
-description = "Right after construction, create_app() saves the settings object on app.state.settings so later startup and route code can reuse the same configuration without re-reading the environment."
+description = "Right after construction, create_app() saves the settings object on app.state.settings and also builds one shared WorkoutPlanGenerator wired with an OpenAI client plus KnowledgeRetriever for later request handling."
 module_path = "app.main"
 python_path = "app.main.create_app"
 
@@ -58,9 +58,9 @@ python_path = "app.core.errors.register_exception_handlers"
 
 [[steps]]
 title = "Routers are included in the application"
-description = "create_app() includes both the public health router and the internal learning router so those endpoints become part of the app before startup completes."
-module_path = "app.api.routes_health"
-python_path = "app.api.routes_health.health_check"
+description = "create_app() includes the public generate and health routers plus the internal learning router so both product behavior and developer-facing learning pages are registered before startup completes."
+module_path = "app.api.routes_generate"
+python_path = "app.api.routes_generate.generate_workout_plan"
 
 [[steps]]
 title = "The lifespan startup path runs before requests are served"

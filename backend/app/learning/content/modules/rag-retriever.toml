@@ -1,0 +1,41 @@
+slug = "rag-retriever"
+title = "app.rag.retriever"
+module_path = "app.rag.retriever"
+summary = "Builds retrieval queries from the user profile, asks the embedding and Qdrant clients for matches, and normalizes them into RetrievedChunk objects."
+why_it_exists = "The repo needs one focused module for retrieval grounding so prompt construction and route handling do not need to know about vector search details."
+when_it_runs = "When WorkoutPlanGenerator.generate() prepares grounded context before building the model prompt."
+dependencies = [
+  "app.core.settings.Settings for embedding, Qdrant, and retrieval-limit configuration.",
+  "app.rag.embeddings.EmbeddingClient for query embeddings.",
+  "app.rag.qdrant_client.QdrantClient for vector search.",
+  "app.schemas.UserProfile for the retrieval-query input shape.",
+]
+used_by = [
+  "app.main wires one KnowledgeRetriever into the shared WorkoutPlanGenerator at startup.",
+  "app.services.workout_plan_generator calls build_retrieval_query() and retrieve() on each workout-generation request.",
+  "Retrieval-focused tests exercise this module directly to keep the grounding contract explicit.",
+]
+safe_edit_notes = [
+  "Keep empty-query and non-positive-limit behavior cheap and predictable because callers treat retrieval as optional context, not a hard dependency.",
+  "If you change payload field expectations from Qdrant, update retrieval tests and the learning flow because they describe which chunk fields survive normalization.",
+]
+related_modules = [
+  "app-main",
+  "core-settings",
+  "workout-plan-generator",
+  "llm-prompts",
+  "routes-generate",
+]
+related_flows = ["startup-lifecycle", "workout-plan-generation"]
+
+[[key_functions]]
+name = "KnowledgeRetriever"
+python_path = "app.rag.retriever.KnowledgeRetriever"
+summary = "Provides the retrieve() path that embeds query text, searches Qdrant, and converts valid payloads into retrieved chunks with stable fields."
+why_it_matters = "This class is the main boundary that turns vector-search results into the prompt grounding material the generator can actually use."
+
+[[key_functions]]
+name = "build_retrieval_query"
+python_path = "app.rag.retriever.build_retrieval_query"
+summary = "Flattens the current UserProfile fields into the plain-text query string used for retrieval."
+why_it_matters = "It is the shortest path to understanding what information the repo currently exposes to the retrieval layer."

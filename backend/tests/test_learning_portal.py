@@ -43,12 +43,15 @@ async def test_learning_overview_renders_when_enabled(
     assert "app.main" in response.text
     assert "app.core.settings" in response.text
     assert "app.api.routes_generate" in response.text
+    assert "app.rag.retriever" in response.text
     assert "app.llm.openai_client" in response.text
-    assert "app.learning.loader" in response.text
+    assert "app.evals.runner" in response.text
     assert "Startup lifecycle" in response.text
     assert "Request lifecycle" in response.text
     assert "Workout plan generation" in response.text
+    assert "Eval runner" in response.text
     assert 'href="/__learn/flows/workout-plan-generation"' in response.text
+    assert 'href="/__learn/flows/eval-runner"' in response.text
     assert 'href="/__learn/flows/startup-lifecycle"' in response.text
     assert "Open flow" in response.text
     assert "Glossary" in response.text
@@ -103,6 +106,54 @@ async def test_learning_workout_generation_flow_renders_when_enabled(
     assert "input_tokens" in response.text
     assert "openai_invalid_output_retries" in response.text
     assert "openai_workout_plan_fallback" in response.text
+    assert "KnowledgeRetriever.retrieve()" in response.text
+    assert "X-RAG-Chunk-Count" in response.text
+    assert "Safety-First Fallback Plan" in response.text
+
+
+@pytest.mark.anyio
+async def test_learning_rag_retriever_module_detail_renders_when_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ENABLE_DEV_LEARNING_PORTAL", "true")
+
+    response = await _get(create_app(), "/__learn/modules/rag-retriever")
+
+    assert response.status_code == 200
+    assert "vector search details" in response.text
+    assert "app.rag.retriever.KnowledgeRetriever" in response.text
+    assert "/__learn/flows/workout-plan-generation" in response.text
+    assert "/__learn/glossary#grounding" in response.text
+
+
+@pytest.mark.anyio
+async def test_learning_eval_runner_flow_renders_when_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ENABLE_DEV_LEARNING_PORTAL", "true")
+
+    response = await _get(create_app(), "/__learn/flows/eval-runner")
+
+    assert response.status_code == 200
+    assert "Eval runner" in response.text
+    assert "workout_plan_eval_dataset_v1.json" in response.text
+    assert "generate_plan_live()" in response.text
+    assert "score_case()" in response.text
+
+
+@pytest.mark.anyio
+async def test_learning_evals_runner_module_detail_renders_when_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ENABLE_DEV_LEARNING_PORTAL", "true")
+
+    response = await _get(create_app(), "/__learn/modules/evals-runner")
+
+    assert response.status_code == 200
+    assert "local eval entry point" in response.text
+    assert "app.evals.runner.score_case" in response.text
+    assert "/__learn/flows/eval-runner" in response.text
+    assert "/__learn/glossary#rubric" in response.text
 
 
 @pytest.mark.anyio
@@ -114,7 +165,7 @@ async def test_learning_llm_openai_client_module_detail_renders_when_enabled(
     response = await _get(create_app(), "/__learn/modules/llm-openai-client")
 
     assert response.status_code == 200
-    assert "structured parsing, reliability handling, usage logging" in response.text
+    assert "structured parsing, runtime safety guardrails, reliability handling" in response.text
     assert "app.llm.openai_client.OpenAIWorkoutPlanClient" in response.text
     assert "/__learn/flows/workout-plan-generation" in response.text
     assert "/__learn/glossary#structured-output" in response.text
@@ -168,6 +219,9 @@ async def test_learning_glossary_renders_when_enabled(
     assert "Retry" in response.text
     assert "Token usage" in response.text
     assert "Fallback plan" in response.text
+    assert "Grounding" in response.text
+    assert "Safety guardrail" in response.text
+    assert "Rubric" in response.text
     assert "Why this matters here:" in response.text
 
 

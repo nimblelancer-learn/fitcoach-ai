@@ -1,7 +1,7 @@
 slug = "routes-generate"
 title = "app.api.routes_generate"
 module_path = "app.api.routes_generate"
-summary = "Defines the POST endpoint that accepts a user profile and returns a structured workout plan."
+summary = "Defines the POST endpoint that accepts a user profile, delegates grounded workout generation, and exposes lightweight retrieval debug headers in the response."
 why_it_exists = "This router is the entry point for the repo's main LLM-backed feature, so it gives beginners a concrete example of request validation plus service delegation."
 when_it_runs = "When FastAPI dispatches a POST request to /generate/workout-plan."
 dependencies = [
@@ -16,12 +16,14 @@ used_by = [
 ]
 safe_edit_notes = [
   "Keep this route thin so request parsing stays separate from prompt construction and OpenAI error handling.",
+  "If you change the retrieval debug headers or remove get_last_debug_context(), update the workout generation flow because it describes that response-time behavior.",
   "If you change the response model or app.state dependency, update the workout plan generation flow because it describes the current handoff sequence.",
 ]
 related_modules = [
   "app-main",
   "workout-plan-generator",
   "llm-openai-client",
+  "rag-retriever",
 ]
 related_flows = [
   "request-lifecycle",
@@ -32,4 +34,4 @@ related_flows = [
 name = "generate_workout_plan"
 python_path = "app.api.routes_generate.generate_workout_plan"
 summary = "Reads the shared WorkoutPlanGenerator from app state and delegates workout generation to it."
-why_it_matters = "This function is the clean handoff point between HTTP concerns and the LLM generation pipeline."
+why_it_matters = "This function is the clean handoff point between HTTP concerns and the grounded LLM generation pipeline."

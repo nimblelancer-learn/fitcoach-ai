@@ -1,7 +1,7 @@
 slug = "app-main"
 title = "app.main"
 module_path = "app.main"
-summary = "Builds the FastAPI application, wires in middleware and routers, and triggers the learning portal loader during startup when the flag is enabled."
+summary = "Builds the FastAPI application, wires in middleware and routers, creates the shared workout generator with retrieval support, and triggers the learning portal loader during startup when enabled."
 why_it_exists = "This is the assembly point for the backend. A beginner can inspect one file to see how the app is composed."
 when_it_runs = "When the ASGI server imports the application module and when FastAPI executes startup handlers."
 dependencies = [
@@ -10,7 +10,8 @@ dependencies = [
   "app.core.settings.get_settings to resolve feature flags before the app is shared.",
   "app.core.errors.register_exception_handlers to keep failures consistent.",
   "app.middleware.request_logging.request_logging_middleware to stamp and log every request.",
-  "app.api.routes_generate and app.services.WorkoutPlanGenerator for the LLM-backed workout generation feature.",
+  "app.api.routes_generate plus app.services.WorkoutPlanGenerator for the LLM-backed workout generation feature.",
+  "app.rag.retriever.KnowledgeRetriever for retrieval grounding before model calls.",
   "app.api.routes_health and app.api.routes_learning for route registration.",
   "app.learning.loader.load_learning_portal for startup-time portal validation.",
 ]
@@ -28,6 +29,7 @@ related_modules = [
   "core-settings",
   "routes-health",
   "routes-generate",
+  "rag-retriever",
   "workout-plan-generator",
   "llm-openai-client",
   "routes-learning",

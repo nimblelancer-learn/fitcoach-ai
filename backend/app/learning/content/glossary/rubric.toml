@@ -1,0 +1,5 @@
+slug = "rubric"
+term = "Rubric"
+definition = "A scoring contract that defines what dimensions matter, how much they weigh, and which rule failures should be flagged during evaluation."
+why_it_matters_in_repo = "The local eval stack reads a checked-in rubric JSON file to weight schema validity, safety, personalization, and clarity. That keeps the repo's quality expectations explicit instead of leaving them only in prose docs."
+related_modules = ["evals-runner"]
