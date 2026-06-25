@@ -22,6 +22,7 @@ Many fitness beginners do not know how to create a workout plan that matches the
 FitCoach AI explores how an LLM-powered assistant can generate structured and safer workout plans grounded in a curated fitness knowledge base.
 
 The current repo-level safety boundary is documented in [docs/safety-policy.md](docs/safety-policy.md).
+The current eval stack is documented in [docs/eval-design.md](docs/eval-design.md).
 
 ## Target Users
 
