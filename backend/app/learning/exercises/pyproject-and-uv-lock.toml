@@ -1,0 +1,79 @@
+[topic]
+slug = "pyproject-and-uv-lock"
+title = "Reading backend/pyproject.toml and uv.lock"
+summary = "Practice spotting where backend dependencies are declared, locked, and validated in this repo."
+source_files = ["backend/pyproject.toml", "backend/uv.lock"]
+
+[[questions]]
+id = "runtime-dependencies-file"
+mode = "multiple_choice"
+level = "recognize"
+prompt = "Which file is the source of truth for the backend's declared runtime dependencies?"
+choices = [
+  "backend/pyproject.toml",
+  "backend/uv.lock",
+  "docs/learning-portal-maintenance.md",
+]
+answer_index = 0
+explanation = "Runtime dependency declarations live in the `[project]` table in `backend/pyproject.toml`; `uv.lock` records the resolved install graph."
+
+[[questions]]
+id = "lockfile-role"
+mode = "short_answer"
+level = "distinguish"
+prompt = "In one sentence, what is `backend/uv.lock` for?"
+expected_answer = "It pins the resolved package graph and metadata so installs stay reproducible across machines."
+rubric_hints = [
+  "Mention reproducibility or pinning.",
+  "Distinguish resolved versions from declared intent in `pyproject.toml`.",
+]
+
+[[questions]]
+id = "requires-python-match"
+mode = "multiple_choice"
+level = "apply"
+prompt = "What value appears in both `backend/pyproject.toml` and `backend/uv.lock` for the backend's Python requirement?"
+choices = [
+  ">=3.10",
+  ">=3.11",
+  ">=3.12",
+  ">=3.13",
+]
+answer_index = 2
+explanation = "Both files currently declare `>=3.12`, which keeps the declared project requirement aligned with the resolved lock metadata."
+
+[[questions]]
+id = "resolution-markers-self-check"
+mode = "self_check"
+level = "predict"
+prompt = "Before revealing the answer, name what the `resolution-markers` section in `uv.lock` tells you about the lockfile."
+expected_answer = "It shows the Python-version ranges uv resolved for, so one lockfile can encode package selections across multiple interpreter versions."
+rubric_hints = [
+  "Tie the markers to Python-version-specific resolution.",
+  "Notice the current lock splits behavior across `<3.13`, `3.13.*`, and `>=3.14`.",
+]
+
+[[questions]]
+id = "dev-tools"
+mode = "multiple_choice"
+level = "distinguish"
+prompt = "Where are tools like `pytest` and `ruff` declared for backend development?"
+choices = [
+  "In `[project.dependencies]`",
+  "In `[dependency-groups].dev`",
+  "Only inside `uv.lock`",
+  "Inside `.env`",
+]
+answer_index = 1
+explanation = "The backend keeps test and lint tooling in the `dev` dependency group instead of shipping them as runtime dependencies."
+
+[[questions]]
+id = "safe-edit-sequence"
+mode = "short_answer"
+level = "critique"
+prompt = "You add a new backend dependency to `pyproject.toml`. What local follow-up should you do before trusting the change?"
+expected_answer = "Refresh the lockfile with uv, then run focused validation such as lint and tests so the declared change and resolved graph stay in sync."
+rubric_hints = [
+  "Mention updating the lockfile.",
+  "Mention validation commands, not only file edits.",
+]

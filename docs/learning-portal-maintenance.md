@@ -1,176 +1,187 @@
-# Learning Portal Maintenance Guide
+# Learning Content Maintenance Guide
 
-This guide is the source of truth for updating the dev-only learning portal under `backend/app/learning`.
+This guide is the repo-specific source of truth for maintaining curated learning
+content under `backend/app/learning/`.
 
-## Purpose
+It covers both local learning surfaces:
 
-The portal is intentionally curated, small, and beginner-readable.
+- learning portal reference content in `backend/app/learning/content/`
+- practice content in `backend/app/learning/exercises/` consumed by:
+  - `backend/app/learning/quiz/`
+  - `backend/app/learning/drills/`
 
-That means updates should optimize for:
+The rule is simple: when source knowledge changes, review both surfaces. Do not
+assume updating only the portal or only practice content is enough.
 
-- accurate explanations tied to the current code
-- explicit module and function references
-- early validation failures when curated content drifts
-- small, understandable content files instead of automation-heavy generation
+## Surfaces
 
-## Portal structure
+### Portal
 
-The learning portal has four content types:
+Use the portal for stable explanation:
 
-- `overview`
-  - file: `backend/app/learning/content/overview.toml`
-- `module pages`
-  - directory: `backend/app/learning/content/modules/`
-- `flow pages`
-  - directory: `backend/app/learning/content/flows/`
-- `glossary entries`
-  - directory: `backend/app/learning/content/glossary/`
+- architecture overview
+- module purpose
+- execution flows
+- glossary terms
 
-Typed contracts live in:
+Main files:
 
-- `backend/app/learning/models.py`
+- `backend/app/learning/content/overview.toml`
+- `backend/app/learning/content/modules/*.toml`
+- `backend/app/learning/content/flows/*.toml`
+- `backend/app/learning/content/glossary/*.toml`
 
-Loading and validation live in:
+Validation/runtime:
 
 - `backend/app/learning/loader.py`
-
-Routes and rendering live in:
-
+- `backend/app/learning/models.py`
 - `backend/app/api/routes_learning.py`
-- `backend/app/learning/templates/`
+- `backend/tests/test_learning_portal.py`
 
-## Update policy
+### Practice content
 
-When new code or a new feature is added, update portal content only if it improves a beginner's understanding of the current architecture.
+Use practice content for active retrieval and bounded applied reasoning:
 
-Good candidates:
+- quiz recall and distinction prompts
+- explain-back prompts
+- prediction prompts
+- repo drills
 
-- new top-level FastAPI wiring in `app.main`
-- new routers
-- new middleware
-- new shared core modules
-- new request flows that are important to understanding behavior
-- repeated vocabulary that a beginner would not know yet
+Main files:
 
-Do not add:
+- `backend/app/learning/exercises/*.toml`
+- `backend/app/learning/quiz/models.py`
+- `backend/app/learning/quiz/loader.py`
+- `backend/app/learning/drills/runner.py`
+- `backend/tests/learning/test_quiz_cli.py`
+- `backend/tests/learning/test_repo_drills.py`
 
-- every function in a module
-- raw implementation dumps
-- speculative content for code that does not exist yet
-- generic definitions that are not tied back to this repo
+## When To Update What
 
-## Required workflow for portal updates
+Update the portal when the learner needs a new or corrected explanation of:
 
-Follow this sequence every time:
+- architecture
+- ownership or purpose of a module
+- request or startup flow
+- important repo vocabulary
 
-1. Read the real code first.
-2. Decide whether the change belongs in `overview`, a `module page`, a `flow page`, `glossary`, or a combination.
-3. Update the smallest number of TOML files needed.
-4. Make sure every Python reference in TOML points to a real importable module or attribute.
-5. Run validation commands.
-6. If behavior changed, update tests or add one focused test.
+Update practice content when the learner should now practice:
 
-## How to add or update a module page
+- a new fact or distinction
+- a changed explanation
+- a changed prediction outcome
+- a changed validation choice or repo task
 
-Create or edit one file in `backend/app/learning/content/modules/<slug>.toml`.
+Update both when a code or knowledge change affects both explanation and
+practice. Common cases:
 
-Every module page should explain:
+- startup/runtime wiring changes
+- router or shared service behavior changes
+- source-of-truth workflow changes such as dependency or validation flow
+- renamed modules/functions/flags that appear in portal prose and exercise packs
 
-- what the module does
-- why it exists
-- when it runs
-- dependencies
-- what uses it
-- safe edit notes
-- related modules
-- related flows
-- key functions only
+Update neither when the change is purely internal and does not improve a
+beginner's understanding of the current repo.
 
-Keep `key_functions` limited to high-signal functions a beginner should inspect first.
+## Source-Change Workflow
 
-## How to add or update a flow page
+Run this workflow whenever source knowledge changes:
 
-Create or edit one file in `backend/app/learning/content/flows/<slug>.toml`.
+1. Read the real source first: code, docs, tests, or configs.
+2. List what changed:
+   - facts
+   - explanations
+   - likely outcomes
+   - bounded tasks or validation paths
+3. Decide surface impact:
+   - portal
+   - practice content
+   - both
+   - neither
+4. Update the smallest content files that restore truth.
+5. Recheck nearby content for drift:
+   - portal references
+   - quiz answers
+   - explain-back expected points
+   - prediction outcomes and follow-up checks
+   - drill validators and target tests
+6. Run validation before finishing.
 
-Use a flow page when understanding depends on execution order, such as:
+## Authoring Rules
 
-- request lifecycle
-- startup initialization
-- validation pipeline
-- background processing flow
+Portal rules:
 
-Each step should describe the current behavior, not a desired future architecture.
+- explain the current repo, not a desired future design
+- keep pages curated and beginner-readable
+- prefer key functions and important flow steps only
 
-## How to add or update glossary entries
+Practice rules:
 
-Create or edit one file in `backend/app/learning/content/glossary/<slug>.toml`.
+- keep packs tied to real repo files and workflows
+- keep `expected_points` short and concrete
+- keep prediction scenarios file-specific
+- prefer self-review for nuanced explanation
+- prefer deterministic drill validation such as:
+  - answer-file substring checks
+  - exact test selection
+  - focused pytest targets
 
-Each glossary entry must include:
+Do not:
 
-- `term`
-- `definition`
-- `why_it_matters_in_repo`
-- `related_modules`
+- dump implementation details into portal pages
+- add generic theory not anchored to this repo
+- hardcode knowledge into CLI Python instead of TOML
+- pretend heuristic AI grading is authoritative
+- create broad or network-dependent drills
 
-Use these rules:
+## Anti-Drift Checklist
 
-- `definition` explains the term in plain language
-- `why_it_matters_in_repo` explains why the term matters in FitCoach AI specifically
-- `related_modules` should point to the best next pages to read
+Check these before considering the update complete:
 
-If a term is generic but not actually important in this repo yet, do not add it.
+- [ ] Portal prose still matches current code paths and naming.
+- [ ] Every `module_path` and `python_path` still resolves.
+- [ ] Every related portal slug still exists.
+- [ ] Every exercise topic slug still matches its file name.
+- [ ] Every source file path in packs or drills still exists.
+- [ ] Every expected answer, expected point, and prediction outcome is still true.
+- [ ] Every drill validator still matches the current best local validation path.
+- [ ] Workflow changes updated practice content, not only portal prose.
 
-## How to avoid content mismatch
-
-Before finalizing an update, check these explicitly:
-
-- every `module_path` imports successfully
-- every `python_path` resolves to a real attribute
-- every `related_modules` slug exists
-- every `related_flows` slug exists
-- every glossary entry has repo-specific meaning, not only a dictionary definition
-- the request flow still matches the current app wiring
-
-If a code refactor renamed a function or moved a module:
-
-1. update the TOML reference
-2. update the narrative text
-3. rerun loader validation and tests
-
-## Validation commands
+## Validation Commands
 
 Run from repo root:
 
 ```bash
-cd backend && .venv/bin/python -m ruff check .
-cd backend && .venv/bin/python -m pytest -q
-cd backend && .venv/bin/python - <<'PY'
+cd backend && UV_CACHE_DIR=/tmp/uv-cache uv run ruff check app/learning tests/learning tests/test_learning_portal.py
+cd backend && UV_CACHE_DIR=/tmp/uv-cache uv run pytest tests/test_learning_portal.py tests/learning/test_quiz_cli.py tests/learning/test_repo_drills.py -q
+cd backend && UV_CACHE_DIR=/tmp/uv-cache uv run python - <<'PY'
 from app.learning.loader import load_learning_portal
 portal = load_learning_portal()
-print("modules", sorted(portal.modules))
-print("flows", sorted(portal.flows))
-print("glossary", sorted(portal.glossary))
+print("modules", len(portal.modules))
+print("flows", len(portal.flows))
+print("glossary", len(portal.glossary))
 PY
+cd backend && UV_CACHE_DIR=/tmp/uv-cache uv run python -m app.learning.quiz.cli --topic pyproject-and-uv-lock
+cd backend && UV_CACHE_DIR=/tmp/uv-cache uv run python -m app.learning.quiz.cli --topic app-main-and-learning-portal
+cd backend && UV_CACHE_DIR=/tmp/uv-cache uv run python -m app.learning.quiz.cli --topic runtime-and-workflow-predictions
 ```
 
-## Prompting guide for future Codex updates
+If you changed drill content or drill contracts, also run:
 
-When asking for portal updates later, include these instructions:
+```bash
+cd backend && UV_CACHE_DIR=/tmp/uv-cache uv run python -m app.learning.drills.runner --topic repo-drills
+```
 
-1. Read the relevant backend code before editing portal content.
-2. Follow `docs/learning-portal-maintenance.md`.
-3. Keep the change set small and beginner-readable.
-4. Update curated TOML content, not hardcoded route HTML.
-5. Run `ruff`, `pytest`, and the loader validation snippet before finishing.
-6. If the code changed request flow or startup behavior, review the flow and glossary entries for drift.
+Prepare any required files under `/tmp/fitcoach-learning-drills/repo-drills/`
+before the drill smoke test.
 
-## Review checklist
+## Fast Decision Table
 
-Use this checklist before considering the update done:
-
-- [ ] The explanation matches the real code as it exists now.
-- [ ] New content is curated and not over-documented.
-- [ ] Every new reference validates cleanly.
-- [ ] At least one rendered page or related test covers the change.
-- [ ] Glossary text includes both definition and repo-specific relevance.
-- [ ] No unrelated architecture or UI changes were introduced.
+- New module/flow/glossary concept:
+  update portal first, then decide whether practice should reinforce it.
+- Changed answer, reasoning, or expected repo outcome:
+  update practice content.
+- Changed workflow that learners should both understand and rehearse:
+  update both.
+- Refactor with no learner-facing knowledge change:
+  likely update neither, but still verify references did not drift.

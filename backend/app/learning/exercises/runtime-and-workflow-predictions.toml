@@ -1,0 +1,59 @@
+[topic]
+slug = "runtime-and-workflow-predictions"
+title = "Predicting backend runtime and workflow effects"
+summary = "Practice forecasting what this repo will do after concrete local edits or commands before you verify the result yourself."
+source_files = [
+  "backend/pyproject.toml",
+  "backend/uv.lock",
+  "backend/app/main.py",
+  "backend/app/core/settings.py",
+  "backend/app/learning/content/modules/app-main.toml",
+]
+
+[[questions]]
+id = "pyproject-without-lock-refresh"
+mode = "prediction"
+level = "predict"
+prompt = "Predict the repo outcome before you verify it."
+scenario = "You add a new backend dependency to `backend/pyproject.toml` but do not refresh `backend/uv.lock`, then you run the learning quiz pack about dependency files."
+target_files = ["backend/pyproject.toml", "backend/uv.lock", "backend/app/learning/exercises/pyproject-and-uv-lock.toml"]
+expected_outcome = "The repo will now have declared dependency intent that does not match the checked-in resolved lock state, and the quiz content about keeping declarations and lock data in sync becomes stale until you regenerate the lockfile."
+why = "In this repo, `pyproject.toml` is the declaration source while `uv.lock` captures the resolved graph. Editing only one file creates drift between intent and reproducible install metadata."
+follow_up_check = "Run `cd backend && UV_CACHE_DIR=/tmp/uv-cache uv sync` and inspect the diff in `backend/uv.lock`."
+
+[[questions]]
+id = "uv-sync-lockfile-implication"
+mode = "prediction"
+level = "apply"
+prompt = "Predict the repo outcome before you verify it."
+scenario = "You change dependency constraints in `backend/pyproject.toml` and then run `uv sync` from `backend/`."
+target_files = ["backend/pyproject.toml", "backend/uv.lock"]
+expected_outcome = "If the new constraints resolve successfully, `uv sync` will update the environment and refresh `backend/uv.lock` to match the new resolved package graph."
+why = "`uv sync` reconciles the environment against the declared project metadata and lock state. When the declarations change, the lockfile is the checked-in artifact that records the new resolution."
+follow_up_check = "Inspect `backend/uv.lock` and rerun focused validation such as `uv run pytest tests/learning/test_quiz_cli.py -q`."
+
+[[questions]]
+id = "toggle-dev-learning-portal"
+mode = "prediction"
+level = "predict"
+prompt = "Predict the repo outcome before you verify it."
+scenario = "You set `ENABLE_DEV_LEARNING_PORTAL=0` in the local environment and start the backend app."
+target_files = ["backend/app/core/settings.py", "backend/app/main.py", "backend/app/api/routes_learning.py"]
+expected_outcome = "Startup will skip loading `LearningPortalContent`, and the `/__learn` routes will render the disabled response instead of real portal pages."
+why = "`Settings.enable_dev_learning_portal` feeds `app.main.startup()`, which only calls `load_learning_portal()` when the flag is enabled. The route helper then returns `None` and the disabled template path takes over."
+follow_up_check = "Read `app.main.startup()` and `app.api.routes_learning._get_learning_portal()` side by side."
+
+[[questions]]
+id = "rename-learning-module-slug"
+mode = "prediction"
+level = "critique"
+prompt = "Predict the repo outcome before you verify it."
+scenario = "You rename the slug in `backend/app/learning/content/modules/app-main.toml` from `app-main` to `app-entry` but do not update related references elsewhere in the curated learning content."
+target_files = [
+  "backend/app/learning/content/modules/app-main.toml",
+  "backend/app/learning/content/modules/learning-loader.toml",
+  "backend/app/learning/content/overview.toml",
+]
+expected_outcome = "Learning portal loading will fail fast with a `LearningContentError` about unknown related or featured module slugs."
+why = "The loader validates cross-file references after parsing the TOML content. Any stale `related_modules` or `featured_modules` entry that still points at `app-main` becomes invalid immediately."
+follow_up_check = "Run the loader validation snippet from `docs/learning-portal-maintenance.md` after the rename."

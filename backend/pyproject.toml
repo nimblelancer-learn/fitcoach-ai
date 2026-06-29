@@ -11,6 +11,10 @@ dependencies = [
     "pydantic-settings>=2.14.1",
 ]
 
+[project.scripts]
+learning-quiz = "app.learning.quiz.cli:main"
+learning-drills = "app.learning.drills.runner:main"
+
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",

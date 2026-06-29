@@ -1,0 +1,94 @@
+[drill_set]
+slug = "repo-drills"
+title = "Repo drills for backend reasoning"
+summary = "Move from question answering into bounded repo tasks that ask you to trace flow, predict impact, choose focused tests, and run one local validation target."
+source_files = [
+  "backend/app/main.py",
+  "backend/app/learning/loader.py",
+  "backend/app/api/routes_learning.py",
+  "backend/app/services/workout_plan_generator.py",
+]
+
+[[drills]]
+id = "startup-call-flow-trace"
+category = "call_flow_tracing"
+title = "Trace startup loading for the dev portal"
+prompt = "Write a short answer file that traces how backend startup decides whether to load the learning portal and where the loaded content is stored."
+target_files = [
+  "backend/app/main.py",
+  "backend/app/api/routes_learning.py",
+]
+instructions = [
+  "Create the answer file named below inside the drill workspace.",
+  "Mention the startup function, the feature-flag gate, and the app.state field used later by the route layer.",
+]
+
+[drills.validator]
+type = "answer_file"
+relative_path = "startup-call-flow-trace.txt"
+required_substrings = [
+  "startup",
+  "enable_dev_learning_portal",
+  "load_learning_portal",
+  "app.state.learning_portal",
+]
+
+[[drills]]
+id = "loader-impact-prediction"
+category = "impact_prediction"
+title = "Predict loader fallout from stale slugs"
+prompt = "Write a short answer file predicting what will happen if a curated learning module slug is renamed but overview or related-module references are not updated."
+target_files = [
+  "backend/app/learning/loader.py",
+  "backend/app/learning/content/overview.toml",
+  "backend/app/learning/content/modules/learning-loader.toml",
+]
+instructions = [
+  "Create the answer file named below inside the drill workspace.",
+  "Name the fail-fast exception and the kind of stale references that trigger it.",
+]
+
+[drills.validator]
+type = "answer_file"
+relative_path = "loader-impact-prediction.txt"
+required_substrings = [
+  "LearningContentError",
+  "related_modules",
+  "featured_modules",
+]
+
+[[drills]]
+id = "learning-loader-test-selection"
+category = "test_selection"
+title = "Choose the tightest regression test"
+prompt = "You changed portal loader validation rules. Select the tightest focused pytest target you should run first."
+target_files = [
+  "backend/app/learning/loader.py",
+  "backend/tests/test_learning_portal.py",
+]
+instructions = [
+  "Enter one or more pytest module paths separated by commas.",
+  "Prefer the narrowest useful validation target before broad regressions.",
+]
+
+[drills.validator]
+type = "test_selection"
+expected_tests = ["tests/test_learning_portal.py"]
+
+[[drills]]
+id = "workout-plan-focused-validation"
+category = "constrained_repo_task"
+title = "Run focused workout-plan validation"
+prompt = "Run one bounded local validation target tied to the workout plan generation flow."
+target_files = [
+  "backend/app/services/workout_plan_generator.py",
+  "backend/tests/services/test_workout_plan_generator.py",
+]
+instructions = [
+  "Use the built-in validation hook instead of inventing a broader command.",
+  "This drill passes only if the focused pytest target exits successfully.",
+]
+
+[drills.validator]
+type = "pytest_target"
+pytest_args = ["tests/services/test_workout_plan_generator.py", "-q"]

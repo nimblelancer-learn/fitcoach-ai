@@ -1,0 +1,36 @@
+[drill_set]
+slug = "drill-topic"
+title = "Drill topic title"
+summary = "Practice bounded applied reasoning."
+source_files = ["path/to/source-a", "path/to/source-b"]
+
+[[drills]]
+id = "drill-1"
+category = "call_flow_tracing"
+title = "Trace a bounded flow"
+prompt = "Produce one small artifact that traces the current flow."
+target_files = ["path/to/related-source"]
+instructions = [
+  "Create the requested artifact.",
+  "Mention the required checkpoints.",
+]
+
+[drills.validator]
+type = "answer_file"
+relative_path = "artifact.txt"
+required_substrings = ["point-a", "point-b"]
+
+[[drills]]
+id = "drill-2"
+category = "test_selection"
+title = "Choose the tightest validation target"
+prompt = "Select the narrowest useful test target for the change."
+target_files = ["path/to/related-test"]
+instructions = [
+  "Enter one or more test paths separated by commas.",
+  "Prefer the smallest useful regression target.",
+]
+
+[drills.validator]
+type = "test_selection"
+expected_tests = ["tests/example_test.py"]

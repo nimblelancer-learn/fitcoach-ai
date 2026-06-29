@@ -1,0 +1,66 @@
+[topic]
+slug = "app-main-and-learning-portal"
+title = "Tracing app.main and the dev learning portal"
+summary = "Practice explaining how the backend app is assembled and how the dev-only learning portal is loaded without coupling the quiz CLI to runtime hooks."
+source_files = [
+  "backend/app/main.py",
+  "backend/app/api/routes_learning.py",
+  "backend/app/learning/loader.py",
+]
+
+[[questions]]
+id = "app-main-role"
+mode = "multiple_choice"
+level = "recognize"
+prompt = "Which function in `backend/app/main.py` assembles the FastAPI app, attaches routers, and stores shared state objects on `app.state`?"
+choices = [
+  "lifespan",
+  "create_app",
+  "startup",
+  "request_logging_middleware",
+]
+answer_index = 1
+explanation = "`create_app()` constructs the FastAPI instance, attaches middleware and routers, and stores settings plus the workout generator on `app.state`."
+
+[[questions]]
+id = "startup-learning-portal-explain"
+mode = "explain_back"
+level = "explain"
+prompt = "Explain how the learning portal loader is connected to startup without forcing the local quiz CLI to depend on `ENABLE_DEV_LEARNING_PORTAL`."
+expected_points = [
+  "`app.main.startup()` calls `load_learning_portal()` only when `settings.enable_dev_learning_portal` is true.",
+  "The loaded content is stored on `app.state.learning_portal` for the dev-only route handlers to read later.",
+  "The quiz CLI loads exercise packs directly from disk and does not import or depend on the runtime feature flag path.",
+]
+rubric = [
+  "Name the startup function and the feature-flag gate.",
+  "Separate runtime portal loading from local CLI content loading.",
+  "Keep the explanation repo-specific instead of generic FastAPI theory.",
+]
+reflection_prompt = "Which file would you open next if this startup wiring stopped matching the portal route behavior?"
+
+[[questions]]
+id = "routes-learning-explain"
+mode = "explain_back"
+level = "apply"
+prompt = "A beginner asks why `routes_learning.py` checks the feature flag and reads `request.app.state`. Explain the reason in plain language."
+expected_points = [
+  "The route first checks whether the dev portal is enabled so the internal pages stay unavailable when the feature is off.",
+  "When enabled, the route reads the already-loaded `LearningPortalContent` from `request.app.state` instead of reparsing TOML on every request.",
+  "This keeps request handling simple while relying on startup-time validation from `app.learning.loader`.",
+]
+rubric = [
+  "Mention both the flag gate and the `app.state` lookup.",
+  "Mention the startup-time validation and reuse of in-memory content.",
+]
+
+[[questions]]
+id = "loader-self-check"
+mode = "self_check"
+level = "critique"
+prompt = "Before revealing the answer, name one fail-fast validation rule in `app.learning.loader` that keeps curated portal content trustworthy."
+expected_answer = "The loader verifies schema shape plus cross-references such as module paths, python paths, related slugs, and featured slugs, and raises `LearningContentError` as soon as one is invalid."
+rubric_hints = [
+  "Name at least one concrete validation target, not only 'it validates content'.",
+  "Tie the check to fail-fast behavior during loading.",
+]

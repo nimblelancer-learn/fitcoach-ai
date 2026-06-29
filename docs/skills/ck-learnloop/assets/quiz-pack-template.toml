@@ -1,0 +1,50 @@
+[topic]
+slug = "topic-slug"
+title = "Topic title"
+summary = "What this topic helps the learner understand."
+source_files = ["path/to/source-a", "path/to/source-b"]
+
+[[questions]]
+id = "recognize-1"
+mode = "multiple_choice"
+level = "recognize"
+prompt = "Question prompt"
+choices = ["Choice A", "Choice B", "Choice C"]
+answer_index = 0
+explanation = "Why the correct choice is correct."
+
+[[questions]]
+id = "short-answer-1"
+mode = "short_answer"
+level = "distinguish"
+prompt = "Answer in one or two sentences."
+expected_answer = "Expected answer."
+rubric_hints = [
+  "Mention the key distinction.",
+]
+
+[[questions]]
+id = "explain-1"
+mode = "explain_back"
+level = "explain"
+prompt = "Explain the concept or relationship in your own words."
+expected_points = [
+  "Key point one.",
+  "Key point two.",
+  "Key point three.",
+]
+rubric = [
+  "Mention the mechanism or reason.",
+  "Keep the explanation specific to the source corpus.",
+]
+reflection_prompt = "Which point felt least stable?"
+
+[[questions]]
+id = "self-check-1"
+mode = "self_check"
+level = "critique"
+prompt = "Name one failure mode or important caveat before revealing the answer."
+expected_answer = "Reveal answer."
+rubric_hints = [
+  "Name one concrete caveat tied to the corpus.",
+]

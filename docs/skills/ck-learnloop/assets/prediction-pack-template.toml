@@ -1,0 +1,17 @@
+[topic]
+slug = "prediction-topic"
+title = "Prediction topic title"
+summary = "Practice predicting what happens after a change or event."
+source_files = ["path/to/source-a", "path/to/source-b"]
+
+[[questions]]
+id = "predict-1"
+mode = "prediction"
+level = "predict"
+prompt = "Predict the outcome before checking."
+scenario = "Describe the concrete change, event, or decision."
+target_files = ["path/to/related-source"]
+expected_outcome = "Describe what should happen."
+why = "Explain why that outcome follows from the source corpus."
+follow_up_check = "Describe a manual way to verify the prediction."
+

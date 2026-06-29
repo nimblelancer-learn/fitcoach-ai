@@ -91,6 +91,68 @@ cd backend
 RUN_OPENAI_INTEGRATION=1 OPENAI_API_KEY=... OPENAI_MODEL=gpt-4.1-mini uv run pytest tests/integration/test_openai_workout_plan_integration.py -q
 ```
 
+## Local Learning Quiz CLI
+
+Run the local-only quiz CLI against one curated exercise pack:
+
+```bash
+cd backend
+uv run python -m app.learning.quiz.cli --topic pyproject-and-uv-lock
+```
+
+This local-only CLI is intentionally isolated from FastAPI runtime wiring and
+the `ENABLE_DEV_LEARNING_PORTAL` feature flag. It reads one TOML pack from
+`app/learning/exercises/`, renders one question at a time in the terminal, and
+prints a compact summary at the end.
+
+Supported question modes:
+
+- `multiple_choice`
+- `short_answer`
+- `self_check`
+- `explain_back` with self-marked expected-point coverage
+- `prediction` with repo-specific scenarios, expected outcomes, and manual follow-up checks
+
+Current starter topics:
+
+- `pyproject-and-uv-lock`
+- `app-main-and-learning-portal`
+- `runtime-and-workflow-predictions`
+
+Focused validation for the quiz package:
+
+```bash
+cd backend
+uv run ruff check app/learning/quiz tests/learning/test_quiz_cli.py
+uv run pytest tests/learning/test_quiz_cli.py -q
+```
+
+## Local Repo Drills
+
+Run the separate drill runner when you want bounded repo tasks instead of
+ordinary quiz prompts:
+
+```bash
+cd backend
+uv run python -m app.learning.drills.runner --topic repo-drills
+```
+
+Repo drills differ from quizzes in one important way: quizzes stop at answer
+reveal and self-review, while drills ask you to produce a local artifact,
+choose a focused regression target, or run one bounded validation hook.
+
+Current drill set:
+
+- `repo-drills`
+
+Focused validation for the drill runner:
+
+```bash
+cd backend
+uv run ruff check app/learning/drills tests/learning/test_repo_drills.py
+uv run pytest tests/learning/test_repo_drills.py -q
+```
+
 ## Retrieval quality notes
 
 The retrieval quality harness uses the checked-in `knowledge_base/processed/chunks-v1.json`
