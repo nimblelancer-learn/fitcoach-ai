@@ -93,6 +93,10 @@ RUN_OPENAI_INTEGRATION=1 OPENAI_API_KEY=... OPENAI_MODEL=gpt-4.1-mini uv run pyt
 
 ## Local Learning Quiz CLI
 
+System overview:
+
+- `../docs/local-learning-system-overview.md`
+
 Run the local-only quiz CLI against one curated exercise pack:
 
 ```bash
