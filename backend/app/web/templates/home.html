@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}FitCoach AI MVP Demo{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Same-stack MVP demo</span>
+    <h1>Generate a beginner-friendly workout plan in one flow.</h1>
+    <p class="lede">
+      This public MVP uses the same FastAPI app for the interface and the API.
+      It turns a real profile into a structured plan, shows safety warnings,
+      and reports whether retrieval grounding contributed knowledge chunks.
+    </p>
+    <div class="hero-grid" aria-label="Demo summary">
+      <article class="status-card">
+        <span class="kicker">Surface</span>
+        <strong>One deployed app</strong>
+        <p>Frontend and backend stay in the same service to keep the MVP operationally lean.</p>
+      </article>
+      <article class="status-card">
+        <span class="kicker">Contract</span>
+        <strong>Structured plan output</strong>
+        <p>The demo calls the same generation logic used by <code>/generate/workout-plan</code>.</p>
+      </article>
+      <article class="status-card">
+        <span class="kicker">Safety</span>
+        <strong>Conservative defaults</strong>
+        <p>Medical-risk boundaries and beginner guardrails remain active in the live flow.</p>
+      </article>
+    </div>
+  </section>
+
+  <div class="main-grid">
+    <section class="panel" aria-labelledby="plan-form-title">
+      <h2 id="plan-form-title">Build your profile</h2>
+      <p class="section-copy">
+        Keep inputs concrete. Use one line per limitation or preference. The
+        first MVP favors clear structured input over hidden automation.
+      </p>
+
+      {% if validation_errors %}
+        <div class="alert alert-error" role="alert" aria-live="polite">
+          <strong>Fix the profile details below.</strong>
+          <ul class="detail-list">
+            {% for error in validation_errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if service_error %}
+        <div class="alert alert-error" role="alert" aria-live="polite">
+          <strong>Generation is currently unavailable.</strong>
+          <p>{{ service_error }}</p>
+        </div>
+      {% endif %}
+
+      <form action="/" method="post">
+        <div class="field-group">
+          <span class="kicker">Goal</span>
+          <div class="choice-grid compact" role="radiogroup" aria-label="Fitness goal">
+            {% for item in goal_choices %}
+              <div class="choice-card">
+                <input
+                  type="radio"
+                  id="goal-{{ item.value }}"
+                  name="goal"
+                  value="{{ item.value }}"
+                  {% if form_state.goal == item.value %}checked{% endif %}
+                />
+                <label for="goal-{{ item.value }}">{{ item.label }}</label>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field-group">
+            <label for="experience_level"><span class="kicker">Experience level</span></label>
+            <select id="experience_level" name="experience_level">
+              {% for item in experience_choices %}
+                <option value="{{ item.value }}" {% if form_state.experience_level == item.value %}selected{% endif %}>
+                  {{ item.label }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label for="training_location"><span class="kicker">Training location</span></label>
+            <select id="training_location" name="training_location">
+              {% for item in location_choices %}
+                <option value="{{ item.value }}" {% if form_state.training_location == item.value %}selected{% endif %}>
+                  {{ item.label }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label for="training_days_per_week"><span class="kicker">Days per week</span></label>
+            <input
+              id="training_days_per_week"
+              name="training_days_per_week"
+              type="number"
+              min="1"
+              max="7"
+              value="{{ form_state.training_days_per_week }}"
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="session_duration_minutes"><span class="kicker">Session duration (minutes)</span></label>
+            <input
+              id="session_duration_minutes"
+              name="session_duration_minutes"
+              type="number"
+              min="15"
+              max="180"
+              value="{{ form_state.session_duration_minutes }}"
+            />
+          </div>
+        </div>
+
+        <div class="field-group">
+          <span class="kicker">Equipment available</span>
+          <div class="choice-grid compact">
+            {% for item in equipment_choices %}
+              <div class="choice-card">
+                <input
+                  type="checkbox"
+                  id="equipment-{{ item.value }}"
+                  name="equipment"
+                  value="{{ item.value }}"
+                  {% if item.value in form_state.equipment %}checked{% endif %}
+                />
+                <label for="equipment-{{ item.value }}">{{ item.label }}</label>
+              </div>
+            {% endfor %}
+          </div>
+          <p class="helper">Select at least one option. The model uses this to avoid impossible recommendations.</p>
+        </div>
+
+        <div class="field-group">
+          <label for="injuries_or_limitations_text"><span class="kicker">Limitations or discomfort</span></label>
+          <textarea id="injuries_or_limitations_text" name="injuries_or_limitations_text">{{ form_state.injuries_or_limitations_text }}</textarea>
+          <p class="helper">One line per item. This is for general training constraints, not diagnosis.</p>
+        </div>
+
+        <div class="field-group">
+          <label for="exercise_preferences_text"><span class="kicker">Exercise preferences</span></label>
+          <textarea id="exercise_preferences_text" name="exercise_preferences_text">{{ form_state.exercise_preferences_text }}</textarea>
+          <p class="helper">Examples: strength training, walking, low-impact cardio, short sessions.</p>
+        </div>
+
+        <div class="button-row">
+          <button class="primary-button" type="submit" data-submit-button>
+            Generate workout plan
+          </button>
+          <a class="secondary-link" href="/docs">Inspect API contract</a>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="result-title">
+      <h2 id="result-title">Generated plan</h2>
+
+      {% if generated_plan %}
+        <div class="alert alert-success" aria-live="polite">
+          <strong>Plan ready.</strong>
+          <p>
+            Retrieval grounding used {{ debug_context.retrieved_chunks | length }}
+            knowledge chunk{% if debug_context.retrieved_chunks | length != 1 %}s{% endif %}.
+          </p>
+        </div>
+
+        <article class="result-card">
+          <span class="kicker">Plan title</span>
+          <h3>{{ generated_plan.title }}</h3>
+          <p>{{ generated_plan.summary }}</p>
+
+          <div class="summary-grid" aria-label="Plan summary">
+            <div class="summary-chip">
+              <span class="kicker">Goal</span>
+              <strong>{{ generated_plan.goal.value.replace("_", " ").title() }}</strong>
+              <span>Primary training direction</span>
+            </div>
+            <div class="summary-chip">
+              <span class="kicker">Experience</span>
+              <strong>{{ generated_plan.experience_level.value.title() }}</strong>
+              <span>Plan complexity target</span>
+            </div>
+            <div class="summary-chip">
+              <span class="kicker">Weekly days</span>
+              <strong>{{ generated_plan.training_days_per_week }}</strong>
+              <span>Scheduled training sessions</span>
+            </div>
+            <div class="summary-chip">
+              <span class="kicker">Duration</span>
+              <strong>{{ generated_plan.duration_weeks }} weeks</strong>
+              <span>Suggested progression window</span>
+            </div>
+          </div>
+
+          <section>
+            <h3>Progression suggestion</h3>
+            <p>{{ generated_plan.progression_suggestion }}</p>
+          </section>
+
+          <section>
+            <h3>Safety warnings</h3>
+            {% if generated_plan.safety_warnings %}
+              <ul class="warning-list">
+                {% for warning in generated_plan.safety_warnings %}
+                  <li>
+                    <strong>{{ warning.severity.value.title() }}:</strong>
+                    {{ warning.message }}
+                    <br />
+                    <span>{{ warning.recommended_action }}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="empty-state">No additional plan-level warnings were returned.</p>
+            {% endif %}
+          </section>
+        </article>
+
+        <section class="day-grid" aria-label="Weekly schedule">
+          {% for day in generated_plan.weekly_schedule %}
+            <article class="workout-day">
+              <span class="kicker">Day {{ day.day_index }}</span>
+              <h3>{{ day.title }}</h3>
+              <p>{{ day.focus }}</p>
+              <div class="day-meta">
+                <span>{{ day.estimated_duration_minutes }} minutes</span>
+                <span>{{ day.intensity_note }}</span>
+              </div>
+
+              <section>
+                <h3>Warm-up</h3>
+                <ul class="detail-list">
+                  {% for item in day.warm_up %}
+                    <li>{{ item }}</li>
+                  {% endfor %}
+                </ul>
+              </section>
+
+              <section>
+                <h3>Exercises</h3>
+                <div class="exercise-list">
+                  {% for exercise in day.exercises %}
+                    <article class="exercise-card">
+                      <span class="kicker">{{ exercise.category.value.title() }}</span>
+                      <h3>{{ exercise.name }}</h3>
+                      <p>
+                        {% if exercise.prescription_type.value == "repetitions" %}
+                          {{ exercise.sets }} sets of {{ exercise.reps_min }}-{{ exercise.reps_max }} reps
+                        {% else %}
+                          {{ exercise.sets }} set{% if exercise.sets != 1 %}s{% endif %} of {{ exercise.duration_seconds }} seconds
+                        {% endif %}
+                        at {{ exercise.intensity.value }} intensity
+                      </p>
+                      <ul class="detail-list">
+                        {% for instruction in exercise.instructions %}
+                          <li>{{ instruction }}</li>
+                        {% endfor %}
+                      </ul>
+                      {% if exercise.safety_notes %}
+                        <p><strong>Safety notes:</strong> {{ exercise.safety_notes | join(", ") }}</p>
+                      {% endif %}
+                      {% if exercise.alternatives %}
+                        <p><strong>Alternatives:</strong> {{ exercise.alternatives | join(", ") }}</p>
+                      {% endif %}
+                    </article>
+                  {% endfor %}
+                </div>
+              </section>
+
+              <section>
+                <h3>Cool-down</h3>
+                <ul class="detail-list">
+                  {% for item in day.cool_down %}
+                    <li>{{ item }}</li>
+                  {% endfor %}
+                </ul>
+              </section>
+            </article>
+          {% endfor %}
+        </section>
+
+        <section class="panel" aria-labelledby="grounding-title">
+          <h2 id="grounding-title">Grounding details</h2>
+          <p class="section-copy">
+            The current MVP exposes whether retrieval contributed evidence to the
+            prompt. This stays operational and reviewable instead of hiding the
+            retrieval path behind a black box.
+          </p>
+          {% if debug_context.retrieved_chunks %}
+            <ul class="meta-pill-list">
+              {% for chunk in debug_context.retrieved_chunks %}
+                <li>{{ chunk.chunk_id }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="empty-state">No retrieval chunks were attached for this request.</p>
+          {% endif %}
+        </section>
+      {% else %}
+        <article class="result-card">
+          <span class="kicker">Result state</span>
+          <h3>No plan yet</h3>
+          <p class="empty-state">
+            Submit the profile form to generate a structured plan and inspect how
+            the same-stack MVP behaves end to end.
+          </p>
+          <ul class="notice-list">
+            <li>The public demo keeps the API and UI in one FastAPI deployment.</li>
+            <li>Safety fallbacks remain active for medical-risk or unsafe beginner outputs.</li>
+            <li>Later milestone work will add feedback capture and external observability.</li>
+          </ul>
+        </article>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

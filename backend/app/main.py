@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from app.api.routes_generate import router as generate_router
 from app.api.routes_health import router as health_router
 from app.api.routes_learning import router as learning_router
+from app.api.routes_web import router as web_router
 from app.core.errors import register_exception_handlers
 from app.core.logging import setup_logging
 from app.core.settings import get_settings
@@ -61,6 +62,7 @@ def create_app() -> FastAPI:
     app.include_router(generate_router)
     app.include_router(health_router)
     app.include_router(learning_router)
+    app.include_router(web_router)
 
     return app
 

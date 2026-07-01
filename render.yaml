@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: fitcoach-ai-mvp
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: ENABLE_DEV_LEARNING_PORTAL
+        value: "false"
+      - key: OPENAI_TIMEOUT_SECONDS
+        value: "20"
+      - key: OPENAI_INVALID_OUTPUT_RETRIES
+        value: "2"
+      - key: DATABASE_URL
+        value: sqlite:////var/data/fitcoach_ai.db
+      - key: QDRANT_COLLECTION
+        value: fitcoach_knowledge
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: RAG_EMBEDDING_PROVIDER
+        value: openai
+      - key: RAG_EMBEDDING_MODEL
+        value: text-embedding-3-small
+      - key: RAG_EMBEDDING_DIMENSIONS
+        value: "256"
+      - key: RAG_RETRIEVAL_LIMIT
+        value: "3"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: OPENAI_INPUT_COST_PER_MILLION_TOKENS_USD
+        sync: false
+      - key: OPENAI_OUTPUT_COST_PER_MILLION_TOKENS_USD
+        sync: false
+      - key: LANGFUSE_PUBLIC_KEY
+        sync: false
+      - key: LANGFUSE_SECRET_KEY
+        sync: false
+      - key: LANGFUSE_HOST
+        sync: false
+    disk:
+      name: app-data
+      mountPath: /var/data
+      sizeGB: 10

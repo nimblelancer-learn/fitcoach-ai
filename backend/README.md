@@ -6,6 +6,8 @@ uv sync
 uv run fastapi dev app/main.py
 ```
 
+The same-stack MVP web demo is served from the same FastAPI application at `/`.
+
 ## Environment
 
 Set these values in the project `.env` file before testing the live OpenAI path:
@@ -30,6 +32,16 @@ For local indexing without external credentials, the default
 `RAG_EMBEDDING_PROVIDER=local-hash` uses a deterministic hash-based embedder.
 Switch to `RAG_EMBEDDING_PROVIDER=openai` when `OPENAI_API_KEY` is configured
 and you want real provider embeddings.
+
+For the Render deployment path in issue `#42`, the repository uses:
+
+- `render.yaml` for the Blueprint definition
+- a persistent disk mounted at `/var/data`
+- `DATABASE_URL=sqlite:////var/data/fitcoach_ai.db` for the MVP app database
+- a managed Qdrant endpoint supplied through `QDRANT_URL` and `QDRANT_API_KEY`
+- `OPENAI_MODEL=gpt-4.1-mini` for generation
+- `RAG_EMBEDDING_PROVIDER=openai` with
+  `RAG_EMBEDDING_MODEL=text-embedding-3-small` for retrieval embeddings
 
 The repo's safety boundary and medical-scope policy lives in `../docs/safety-policy.md`.
 
@@ -75,6 +87,13 @@ Run the local backend test suite:
 ```bash
 cd backend
 uv run pytest tests -q
+```
+
+Focused validation for the same-stack MVP web surface:
+
+```bash
+cd backend
+UV_CACHE_DIR=/tmp/uv-cache uv run pytest tests/api/test_web_home.py tests/api/test_generate_workout_plan.py tests/test_learning_portal.py -q
 ```
 
 Run the focused retrieval quality checks:
