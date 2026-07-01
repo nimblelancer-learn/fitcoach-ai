@@ -55,6 +55,12 @@ uv sync
 uv run fastapi dev app/main.py
 ```
 
+The same-stack MVP demo route is available at:
+
+- `GET /` for the server-rendered public interface
+- `POST /` for form-based workout-plan generation
+- `GET /generate/workout-plan` for the JSON API contract
+
 ## Current Backend LLM Flow
 
 The local workout-plan generation path is:
@@ -110,6 +116,53 @@ uv run pytest tests -q
 ```
 
 The real OpenAI integration test is opt-in and guarded by environment variables.
+
+## Render Deployment Path
+
+Issue `#42` uses a same-stack Render deployment path:
+
+- one Render web service for the FastAPI API plus the public MVP UI
+- one persistent Render disk for SQLite at `sqlite:////var/data/fitcoach_ai.db`
+- one managed Qdrant instance referenced through `QDRANT_URL` and `QDRANT_API_KEY`
+
+The Blueprint file is:
+
+- [`render.yaml`](./render.yaml)
+
+Current deployment intent:
+
+- `GET /` is the public MVP page
+- `GET /health` is the Render health check
+- the learning portal is disabled in public deployment with
+  `ENABLE_DEV_LEARNING_PORTAL=false`
+
+To deploy on Render:
+
+1. Create a new Blueprint-backed service from this repository.
+2. Let Render read `render.yaml`.
+3. Fill the prompted secret or environment values:
+   - `OPENAI_API_KEY`
+   - `QDRANT_URL`
+   - `QDRANT_API_KEY`
+4. After the first deploy succeeds, open the shell or run a one-off command to
+   index the knowledge base:
+
+```bash
+cd /app && python -m app.rag.index
+```
+
+Notes:
+
+- The Blueprint provisions a persistent disk for the app database requirement
+  even though the current MVP does not yet write generation data to SQLite.
+- The deployed default AI path is:
+  - `OPENAI_MODEL=gpt-4.1-mini`
+  - `RAG_EMBEDDING_PROVIDER=openai`
+  - `RAG_EMBEDDING_MODEL=text-embedding-3-small`
+- Grounded retrieval depends on loading the Qdrant collection before public
+  demo validation.
+- The final public demo URL should be added here after the first successful
+  deployment is live.
 
 ## Safety Boundary
 
