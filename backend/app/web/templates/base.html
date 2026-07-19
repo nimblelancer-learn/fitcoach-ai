@@ -381,6 +381,56 @@
         background: #f4f9ff;
       }
 
+      .meta-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid #cfe3f6;
+        background: #f4f9ff;
+      }
+
+      .meta-pill-alert {
+        border-color: #fec84b;
+        background: #fffaeb;
+        color: #93370d;
+      }
+
+      .review-list {
+        display: grid;
+        gap: 18px;
+      }
+
+      .review-card {
+        padding: 20px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: #fbfdff;
+      }
+
+      .review-header,
+      .review-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .review-header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        margin-bottom: 18px;
+      }
+
+      .review-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 16px;
+      }
+
+      .review-stats {
+        margin-top: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+
       .day-grid {
         margin-top: 18px;
       }
@@ -449,6 +499,11 @@
         }
 
         .field-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .review-header,
+        .review-grid {
           grid-template-columns: 1fr;
         }
       }

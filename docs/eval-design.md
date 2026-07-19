@@ -10,6 +10,7 @@ This document explains how the dataset, rubric, and runner fit together today.
 - Dataset: `backend/app/evals/workout_plan_eval_dataset_v1.json`
 - Rubric: `backend/app/evals/workout_plan_eval_rubric_v1.json`
 - Runner: `backend/app/evals/runner.py`
+- Feedback review loop helper: `backend/app/feedback/review_loop.py`
 - Local asset tests: `backend/tests/test_eval_assets.py`
 - Runner tests: `backend/tests/evals/test_runner.py`
 
@@ -129,3 +130,17 @@ uv run python -m app.evals.runner --output reports/eval-report.md --report-forma
   metadata for future eval expansion rather than a full retrieval evaluator.
 - The CLI runner currently assumes live OpenAI credentials if you execute the
   generation path outside tests.
+
+## Phase 6 feedback-to-eval workflow
+
+Public feedback should not go straight into the dataset by intuition alone.
+
+Current policy:
+
+1. export real D1 feedback rows from the deployed MVP
+2. summarize repeated negative patterns with `app.feedback.review_loop`
+3. confirm the repeated weakness is product-level rather than anecdotal noise
+4. only then add the smallest representative eval case and regression coverage
+
+This keeps the eval set tied to observed failures instead of speculative product
+ideas.

@@ -1,3 +1,7 @@
-from .workout_plan_generator import GenerationDebugContext, WorkoutPlanGenerator
+from .workout_plan_generator import (
+    GenerationDebugContext,
+    GenerationRuntimeContext,
+    WorkoutPlanGenerator,
+)
 
-__all__ = ["GenerationDebugContext", "WorkoutPlanGenerator"]
+__all__ = ["GenerationDebugContext", "GenerationRuntimeContext", "WorkoutPlanGenerator"]

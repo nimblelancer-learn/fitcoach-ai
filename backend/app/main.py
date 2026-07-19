@@ -11,6 +11,7 @@ from app.api.routes_web import router as web_router
 from app.core.errors import register_exception_handlers
 from app.core.logging import setup_logging
 from app.core.settings import get_settings
+from app.feedback import FeedbackStore
 from app.learning.loader import load_learning_portal
 from app.llm.openai_client import OpenAIWorkoutPlanClient
 from app.middleware.request_logging import request_logging_middleware
@@ -51,6 +52,9 @@ def create_app() -> FastAPI:
     )
 
     app.state.settings = settings
+    feedback_store = FeedbackStore(settings.database_url)
+    feedback_store.initialize()
+    app.state.feedback_store = feedback_store
     app.state.workout_plan_generator = WorkoutPlanGenerator(
         OpenAIWorkoutPlanClient(settings),
         KnowledgeRetriever(settings),

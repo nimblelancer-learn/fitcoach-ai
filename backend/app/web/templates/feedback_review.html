@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}FitCoach AI | Feedback Review{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <span class="eyebrow">Operator review</span>
+    <h1>Feedback review for recent workout generations.</h1>
+    <p class="lede">
+      This view stays intentionally narrow: it joins qualitative feedback with
+      the runtime metadata needed to diagnose fallback behavior, weak retrieval,
+      and safety-triggered outcomes quickly.
+    </p>
+    <div class="button-row">
+      <a class="secondary-link" href="/feedback/review?signal=all&limit={{ limit }}">All</a>
+      <a class="secondary-link" href="/feedback/review?signal=attention&limit={{ limit }}">Needs attention</a>
+      <a class="secondary-link" href="/feedback/review?signal=fallback&limit={{ limit }}">Fallback only</a>
+      <a class="secondary-link" href="/feedback/review?signal=weak_retrieval&limit={{ limit }}">Weak retrieval</a>
+    </div>
+    <p class="helper">Showing {{ items | length }} of {{ total_count }} saved feedback records.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="review-title">
+    <h2 id="review-title">Recent submissions</h2>
+
+    {% if items %}
+      <div class="review-list">
+        {% for item in items %}
+          <article class="review-card">
+            <div class="review-header">
+              <div>
+                <span class="kicker">Request</span>
+                <h3>{{ item.request_id }}</h3>
+                <p class="helper">{{ item.created_at }}</p>
+              </div>
+              <div class="meta-pill-list">
+                {% if item.attention_reasons %}
+                  {% for reason in item.attention_reasons %}
+                    <span class="meta-pill meta-pill-alert">{{ reason }}</span>
+                  {% endfor %}
+                {% else %}
+                  <span class="meta-pill">normal</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="review-grid">
+              <div>
+                <span class="kicker">Plan</span>
+                <p><strong>{{ item.plan_title }}</strong></p>
+                <p class="helper">{{ item.profile_summary }}</p>
+              </div>
+              <div>
+                <span class="kicker">Feedback signal</span>
+                <p>
+                  {{ item.feedback.usefulness_rating }}/5 ·
+                  {{ item.feedback.difficulty_feedback.value }} ·
+                  safe={{ "yes" if item.feedback.felt_safe else "no" }} ·
+                  follow={{ "yes" if item.feedback.would_follow_plan else "no" }}
+                </p>
+                <p>{{ item.feedback.feedback_text or "No free-text feedback provided." }}</p>
+              </div>
+            </div>
+
+            <div class="stats-grid review-stats">
+              <div class="summary-chip">
+                <span class="kicker">Generated</span>
+                <strong>{{ item.runtime_metadata.generated_at or "unknown" }}</strong>
+                <span>Generation completion timestamp</span>
+              </div>
+              <div class="summary-chip">
+                <span class="kicker">Model</span>
+                <strong>{{ item.runtime_metadata.model_name or "unknown" }}</strong>
+                <span>Stable provider/model identifier</span>
+              </div>
+              <div class="summary-chip">
+                <span class="kicker">Latency</span>
+                <strong>{{ item.runtime_metadata.latency_ms }} ms</strong>
+                <span>End-to-end generation latency</span>
+              </div>
+              <div class="summary-chip">
+                <span class="kicker">Fallback</span>
+                <strong>{{ "Yes" if item.runtime_metadata.used_fallback else "No" }}</strong>
+                <span>Whether the fallback plan path was used</span>
+              </div>
+              <div class="summary-chip">
+                <span class="kicker">Trace</span>
+                <strong>{{ item.runtime_metadata.trace_id or "not linked" }}</strong>
+                <span>
+                  {% if item.runtime_metadata.trace_enabled %}
+                    Langfuse configured{% if item.runtime_metadata.langfuse_host %} via {{ item.runtime_metadata.langfuse_host }}{% endif %}
+                  {% else %}
+                    Langfuse not configured for this run
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+
+            <div class="review-grid">
+              <div>
+                <span class="kicker">Retrieved chunks</span>
+                <p>{{ item.runtime_metadata.retrieved_chunk_count }} chunk(s)</p>
+                {% if item.runtime_metadata.retrieved_chunk_ids %}
+                  <ul class="meta-pill-list">
+                    {% for chunk_id in item.runtime_metadata.retrieved_chunk_ids %}
+                      <li>{{ chunk_id }}</li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="empty-state">No retrieval chunks were attached to this generation.</p>
+                {% endif %}
+              </div>
+              <div>
+                <span class="kicker">Safety trigger codes</span>
+                {% if item.runtime_metadata.safety_trigger_codes %}
+                  <ul class="meta-pill-list">
+                    {% for code in item.runtime_metadata.safety_trigger_codes %}
+                      <li>{{ code }}</li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="empty-state">No safety trigger codes recorded for this run.</p>
+                {% endif %}
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">
+        No feedback records match the current filter yet. Generate a plan, save feedback,
+        or switch back to a broader filter.
+      </p>
+    {% endif %}
+  </section>
+{% endblock %}

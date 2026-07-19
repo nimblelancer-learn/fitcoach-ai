@@ -16,3 +16,15 @@ Run the live eval runner with:
 cd backend
 uv run python -m app.evals.runner --output reports/eval-report.md --report-format markdown
 ```
+
+When Phase 6 public-feedback evidence exists, use the review-loop helper first:
+
+```bash
+cd backend
+uv run python -m app.feedback.review_loop \
+  --input ../artifacts/feedback-loop/feedback-export-YYYYMMDD.json \
+  --output-dir ../artifacts/feedback-loop/review-YYYYMMDD
+```
+
+Only add new eval cases after the review output shows a confirmed repeated
+negative pattern from real submissions.

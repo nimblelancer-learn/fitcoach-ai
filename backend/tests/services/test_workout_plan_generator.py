@@ -1,7 +1,7 @@
 import pytest
 
 from app.rag.retriever import RetrievedChunk
-from app.schemas import UserProfile, WorkoutPlan
+from app.schemas import FeedbackRuntimeMetadata, UserProfile, WorkoutPlan
 from app.services import WorkoutPlanGenerator
 
 
@@ -139,10 +139,22 @@ class FakeClient:
     def __init__(self, result: WorkoutPlan) -> None:
         self._result = result
         self.calls: list[list[dict]] = []
+        self._last_generation_metadata = FeedbackRuntimeMetadata(
+            generated_at="2026-07-14T17:00:00+00:00",
+            model_name="gpt-4.1-mini",
+            latency_ms=231,
+            used_fallback=False,
+            retrieved_chunk_count=0,
+            retrieved_chunk_ids=[],
+            safety_trigger_codes=[],
+        )
 
     async def generate_workout_plan(self, messages: list[dict]) -> WorkoutPlan:
         self.calls.append(messages)
         return self._result
+
+    def get_last_generation_metadata(self) -> FeedbackRuntimeMetadata:
+        return self._last_generation_metadata
 
 
 class FakeRetriever:
@@ -249,6 +261,11 @@ async def test_generate_retrieves_context_and_exposes_debug_state(
     debug_context = service.get_last_debug_context()
     assert debug_context.retrieved_chunks == retriever._chunks
     assert "goal: fat_loss" in debug_context.retrieval_query
+    runtime_context = service.get_last_runtime_context()
+    assert runtime_context.metadata.model_name == "gpt-4.1-mini"
+    assert runtime_context.metadata.latency_ms == 231
+    assert runtime_context.metadata.retrieved_chunk_count == 1
+    assert runtime_context.metadata.retrieved_chunk_ids == ["doc-1::chunk-000"]
 
 
 @pytest.mark.asyncio
@@ -281,3 +298,5 @@ async def test_generate_falls_back_to_prompt_without_context_when_retrieval_fail
 
     assert result == plan
     assert captured_kwargs["retrieved_chunks"] == []
+    runtime_context = service.get_last_runtime_context()
+    assert runtime_context.metadata.retrieved_chunk_count == 0

@@ -6,7 +6,39 @@ uv sync
 uv run fastapi dev app/main.py
 ```
 
-The same-stack MVP web demo is served from the same FastAPI application at `/`.
+The same-stack MVP web demo is currently served from the same FastAPI
+application at `/`. After a plan is generated, the same web surface can also
+post user feedback to `/feedback`, storing the request context and generated
+plan snapshot for later review.
+
+This remains useful for local development, but it is now a legacy production
+shape. The production target is a Cloudflare Worker plus D1 path documented in
+[`../docs/cloudflare-migration-guide.md`](../docs/cloudflare-migration-guide.md).
+
+## Cloudflare Public MVP
+
+The public MVP no longer deploys this FastAPI app directly.
+
+- runtime entrypoint: [`../cloudflare/worker.mjs`](../cloudflare/worker.mjs)
+- static UI: [`../public/index.html`](../public/index.html)
+- D1 schema: [`../cloudflare/d1/migrations/0001_feedback_runtime_metadata.sql`](../cloudflare/d1/migrations/0001_feedback_runtime_metadata.sql)
+- Worker config: [`../wrangler.toml`](../wrangler.toml)
+
+Use this local validation flow for the public path from the repo root:
+
+```bash
+cp .dev.vars.example .dev.vars
+npx wrangler d1 create fitcoach-ai
+npx wrangler d1 migrations apply FITCOACH_DB --local
+npx wrangler dev
+```
+
+The Worker serves:
+
+- `GET /`
+- `POST /api/workout-plans`
+- `POST /api/feedback`
+- `GET /health`
 
 ## Environment
 
@@ -33,17 +65,29 @@ For local indexing without external credentials, the default
 Switch to `RAG_EMBEDDING_PROVIDER=openai` when `OPENAI_API_KEY` is configured
 and you want real provider embeddings.
 
-For the Render deployment path in issue `#42`, the repository uses:
+For the legacy Render deployment path in issue `#42`, the repository uses:
 
 - `render.yaml` for the Blueprint definition
 - a persistent disk mounted at `/var/data`
-- `DATABASE_URL=sqlite:////var/data/fitcoach_ai.db` for the MVP app database
+- `DATABASE_URL=sqlite:////var/data/fitcoach_ai.db` for the legacy MVP app database
 - a managed Qdrant endpoint supplied through `QDRANT_URL` and `QDRANT_API_KEY`
 - `OPENAI_MODEL=gpt-4.1-mini` for generation
 - `RAG_EMBEDDING_PROVIDER=openai` with
   `RAG_EMBEDDING_MODEL=text-embedding-3-small` for retrieval embeddings
 
 The repo's safety boundary and medical-scope policy lives in `../docs/safety-policy.md`.
+
+## Cloudflare Production Target
+
+The public MVP target is no longer same-stack FastAPI hosting.
+
+- public runtime: Cloudflare Worker
+- public UI: static assets served by Cloudflare
+- public persistence: D1
+- local FastAPI app: engineering and migration reference surface
+
+Do not add new production assumptions that depend on Jinja rendering or
+SQLite file persistence.
 
 ## Runtime safety guardrails
 
@@ -81,6 +125,12 @@ LLM. The `/generate/workout-plan` response includes:
 - `X-RAG-Chunk-Ids`: up to the first three retrieved chunk IDs for debugging
 
 ## Test Commands
+
+Run the Cloudflare Worker smoke tests:
+
+```bash
+node --test cloudflare/worker.test.mjs
+```
 
 Run the local backend test suite:
 

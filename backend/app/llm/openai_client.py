@@ -1,5 +1,7 @@
 import logging
 import re
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from time import perf_counter
 from typing import Any
 
@@ -72,6 +74,13 @@ class OpenAIWorkoutPlanClient:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._client: AsyncOpenAI | None = None
+        self._last_generation_metadata = OpenAIGenerationMetadata(
+            generated_at=datetime.now(UTC).isoformat(),
+            model_name=settings.openai_model or "unconfigured",
+            latency_ms=0,
+            used_fallback=False,
+            safety_trigger_codes=[],
+        )
 
     def _get_client(self) -> AsyncOpenAI:
         if not self._settings.openai_api_key:
@@ -97,9 +106,17 @@ class OpenAIWorkoutPlanClient:
         client = self._get_client()
         max_attempts = self._settings.openai_invalid_output_retries + 1
         prompt_trigger_codes = _detect_prompt_safety_trigger_codes(messages)
+        started_at_total = perf_counter()
 
         if prompt_trigger_codes:
             _log_safety_trigger_event(stage="pre_request", trigger_codes=prompt_trigger_codes)
+            self._last_generation_metadata = OpenAIGenerationMetadata(
+                generated_at=datetime.now(UTC).isoformat(),
+                model_name=self._settings.openai_model,
+                latency_ms=_elapsed_ms(started_at_total),
+                used_fallback=True,
+                safety_trigger_codes=prompt_trigger_codes,
+            )
             return _build_safety_fallback_workout_plan(
                 messages,
                 trigger_codes=prompt_trigger_codes,
@@ -234,10 +251,24 @@ class OpenAIWorkoutPlanClient:
                     _log_safety_trigger_event(
                         stage="post_validation", trigger_codes=plan_trigger_codes
                     )
+                    self._last_generation_metadata = OpenAIGenerationMetadata(
+                        generated_at=datetime.now(UTC).isoformat(),
+                        model_name=self._settings.openai_model,
+                        latency_ms=_elapsed_ms(started_at_total),
+                        used_fallback=True,
+                        safety_trigger_codes=plan_trigger_codes,
+                    )
                     return _build_safety_fallback_workout_plan(
                         messages,
                         trigger_codes=plan_trigger_codes,
                     )
+                self._last_generation_metadata = OpenAIGenerationMetadata(
+                    generated_at=datetime.now(UTC).isoformat(),
+                    model_name=self._settings.openai_model,
+                    latency_ms=_elapsed_ms(started_at_total),
+                    used_fallback=False,
+                    safety_trigger_codes=[],
+                )
                 return plan
 
         logger.warning(
@@ -246,7 +277,26 @@ class OpenAIWorkoutPlanClient:
             max_attempts,
             last_invalid_output_error.code if last_invalid_output_error else "unknown",
         )
+        self._last_generation_metadata = OpenAIGenerationMetadata(
+            generated_at=datetime.now(UTC).isoformat(),
+            model_name=self._settings.openai_model,
+            latency_ms=_elapsed_ms(started_at_total),
+            used_fallback=True,
+            safety_trigger_codes=[],
+        )
         return _build_fallback_workout_plan(messages)
+
+    def get_last_generation_metadata(self) -> "OpenAIGenerationMetadata":
+        return self._last_generation_metadata
+
+
+@dataclass(frozen=True)
+class OpenAIGenerationMetadata:
+    generated_at: str
+    model_name: str
+    latency_ms: int
+    used_fallback: bool
+    safety_trigger_codes: list[str]
 
 
 def _extract_prompt_field(messages: list[dict], field_name: str) -> str | None:

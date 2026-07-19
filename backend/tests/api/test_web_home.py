@@ -3,10 +3,11 @@ import pytest
 
 from app.core.errors import AppError
 from app.core.settings import get_settings
+from app.feedback.store import StoredFeedback
 from app.main import create_app
 from app.rag.retriever import RetrievedChunk
-from app.schemas import WorkoutPlan
-from app.services import GenerationDebugContext
+from app.schemas import FeedbackRuntimeMetadata, PlanFeedback, UserProfile, WorkoutPlan
+from app.services import GenerationDebugContext, GenerationRuntimeContext
 
 
 def valid_form_payload() -> dict[str, object]:
@@ -132,6 +133,20 @@ class FakeGenerator:
         self._result = result
         self._error = error
         self._debug_context = GenerationDebugContext(retrieval_query="", retrieved_chunks=[])
+        self._runtime_context = GenerationRuntimeContext(
+            metadata=FeedbackRuntimeMetadata(
+                generated_at="2026-07-14T17:00:00+00:00",
+                model_name="gpt-4.1-mini",
+                latency_ms=231,
+                used_fallback=False,
+                retrieved_chunk_count=0,
+                retrieved_chunk_ids=[],
+                safety_trigger_codes=[],
+                trace_id=None,
+                trace_enabled=False,
+                langfuse_host=None,
+            )
+        )
 
     async def generate(self, profile):
         if self._error is not None:
@@ -140,6 +155,35 @@ class FakeGenerator:
 
     def get_last_debug_context(self) -> GenerationDebugContext:
         return self._debug_context
+
+    def get_last_runtime_context(self) -> GenerationRuntimeContext:
+        return self._runtime_context
+
+
+class FakeFeedbackStore:
+    def __init__(self) -> None:
+        self.saved_payload: dict[str, object] | None = None
+        self.recent_feedback: list[StoredFeedback] = []
+
+    def save_feedback(
+        self,
+        *,
+        request_id: str,
+        profile: UserProfile,
+        workout_plan: WorkoutPlan,
+        feedback: PlanFeedback,
+        runtime_metadata: FeedbackRuntimeMetadata,
+    ) -> None:
+        self.saved_payload = {
+            "request_id": request_id,
+            "profile": profile,
+            "workout_plan": workout_plan,
+            "feedback": feedback,
+            "runtime_metadata": runtime_metadata,
+        }
+
+    def list_recent_feedback(self, *, limit: int = 20) -> list[StoredFeedback]:
+        return self.recent_feedback[:limit]
 
 
 @pytest.fixture(autouse=True)
@@ -154,9 +198,12 @@ async def test_home_page_renders_demo_form() -> None:
     response = await _request("GET", "/")
 
     assert response.status_code == 200
-    assert "Generate a beginner-friendly workout plan in one flow." in response.text
-    assert "Build your profile" in response.text
-    assert "Generate workout plan" in response.text
+    assert "Tạo kế hoạch tập luyện trong một luồng đơn giản." in response.text
+    assert "Nhập hồ sơ tập luyện" in response.text
+    assert "Tạo kế hoạch tập luyện" in response.text
+    assert "Nhập bằng tiếng Anh ngắn gọn." in response.text
+    assert "Occasional knee discomfort" in response.text
+    assert "Strength training" in response.text
 
 
 @pytest.mark.anyio
@@ -184,10 +231,13 @@ async def test_home_form_submission_renders_generated_plan() -> None:
         response = await client.post("/", data=valid_form_payload())
 
     assert response.status_code == 200
-    assert "Plan ready." in response.text
+    assert "Kế hoạch đã sẵn sàng." in response.text
     assert "3-Day Beginner Home Strength Plan" in response.text
     assert "doc-1::chunk-000" in response.text
     assert "Day 1 - Full Body A" in response.text
+    assert "Lưu phản hồi" in response.text
+    assert "Nội dung kế hoạch hiện vẫn ở tiếng Anh" in response.text
+    assert 'name="runtime_metadata_json"' in response.text
 
 
 @pytest.mark.anyio
@@ -199,7 +249,7 @@ async def test_home_form_submission_renders_validation_errors() -> None:
     response = await _request("POST", "/", data=payload)
 
     assert response.status_code == 200
-    assert "Fix the profile details below." in response.text
+    assert "Vui lòng kiểm tra lại các thông tin bên dưới." in response.text
     assert "training_days_per_week: Input should be greater than or equal to 1" in response.text
     assert "equipment: List should have at least 1 item after validation, not 0" in response.text
 
@@ -222,8 +272,152 @@ async def test_home_form_submission_renders_service_error() -> None:
         response = await client.post("/", data=valid_form_payload())
 
     assert response.status_code == 200
-    assert "Generation is currently unavailable." in response.text
+    assert "Hiện chưa thể tạo kế hoạch." in response.text
     assert "The workout generation service is not configured." in response.text
+
+
+@pytest.mark.anyio
+async def test_feedback_submission_persists_feedback_and_renders_confirmation() -> None:
+    app = create_app()
+    feedback_store = FakeFeedbackStore()
+    app.state.feedback_store = feedback_store
+
+    profile = UserProfile.model_validate(
+        {
+            "goal": "fat_loss",
+            "experience_level": "beginner",
+            "training_days_per_week": 3,
+            "session_duration_minutes": 45,
+            "equipment": ["bodyweight", "dumbbells"],
+            "training_location": "home",
+            "injuries_or_limitations": ["Occasional knee discomfort"],
+            "exercise_preferences": ["Strength training", "Low-impact cardio"],
+        }
+    )
+    plan = WorkoutPlan.model_validate(valid_plan_payload())
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://testserver",
+    ) as client:
+        response = await client.post(
+            "/feedback",
+            data={
+                "request_id": "req-123",
+                "profile_snapshot_json": profile.model_dump_json(),
+                "generated_plan_json": plan.model_dump_json(),
+                "runtime_metadata_json": FeedbackRuntimeMetadata(
+                    generated_at="2026-07-14T17:00:00+00:00",
+                    model_name="gpt-4.1-mini",
+                    latency_ms=231,
+                    used_fallback=False,
+                    retrieved_chunk_count=1,
+                    retrieved_chunk_ids=["doc-1::chunk-000"],
+                    safety_trigger_codes=[],
+                    trace_id="req-123",
+                    trace_enabled=True,
+                    langfuse_host="https://cloud.langfuse.com",
+                ).model_dump_json(),
+                "usefulness_rating": "5",
+                "difficulty_feedback": "about_right",
+                "felt_safe": "true",
+                "would_follow_plan": "true",
+                "feedback_text": "The plan felt realistic and easy to follow.",
+            },
+        )
+
+    assert response.status_code == 200
+    assert "Đã ghi nhận phản hồi." in response.text
+    assert "bằng chứng người dùng thật" in response.text
+    assert feedback_store.saved_payload is not None
+    assert feedback_store.saved_payload["request_id"] == "req-123"
+    assert feedback_store.saved_payload["profile"] == profile
+    assert feedback_store.saved_payload["workout_plan"] == plan
+    assert feedback_store.saved_payload["feedback"] == PlanFeedback.model_validate(
+        {
+            "usefulness_rating": 5,
+            "difficulty_feedback": "about_right",
+            "felt_safe": True,
+            "would_follow_plan": True,
+            "feedback_text": "The plan felt realistic and easy to follow.",
+        }
+    )
+    assert feedback_store.saved_payload["runtime_metadata"] == FeedbackRuntimeMetadata(
+        generated_at="2026-07-14T17:00:00+00:00",
+        model_name="gpt-4.1-mini",
+        latency_ms=231,
+        used_fallback=False,
+        retrieved_chunk_count=1,
+        retrieved_chunk_ids=["doc-1::chunk-000"],
+        safety_trigger_codes=[],
+        trace_id="req-123",
+        trace_enabled=True,
+        langfuse_host="https://cloud.langfuse.com",
+    )
+
+
+@pytest.mark.anyio
+async def test_feedback_review_page_renders_attention_metadata() -> None:
+    app = create_app()
+    feedback_store = FakeFeedbackStore()
+    app.state.feedback_store = feedback_store
+
+    feedback_store.recent_feedback = [
+        StoredFeedback(
+            feedback_id=7,
+            created_at="2026-07-14T17:15:00+00:00",
+            request_id="req-review-7",
+            profile=UserProfile.model_validate(
+                {
+                    "goal": "fat_loss",
+                    "experience_level": "beginner",
+                    "training_days_per_week": 3,
+                    "session_duration_minutes": 45,
+                    "equipment": ["bodyweight"],
+                    "training_location": "home",
+                    "injuries_or_limitations": ["Occasional knee discomfort"],
+                    "exercise_preferences": ["Strength training"],
+                }
+            ),
+            workout_plan=WorkoutPlan.model_validate(valid_plan_payload()),
+            feedback=PlanFeedback.model_validate(
+                {
+                    "usefulness_rating": 2,
+                    "difficulty_feedback": "too_hard",
+                    "felt_safe": False,
+                    "would_follow_plan": False,
+                    "feedback_text": "Too hard and not confidence-inspiring.",
+                }
+            ),
+            runtime_metadata=FeedbackRuntimeMetadata(
+                generated_at="2026-07-14T17:10:00+00:00",
+                model_name="gpt-4.1-mini",
+                latency_ms=544,
+                used_fallback=True,
+                retrieved_chunk_count=0,
+                retrieved_chunk_ids=[],
+                safety_trigger_codes=["medical_keyword:chest pain"],
+                trace_id="req-review-7",
+                trace_enabled=True,
+                langfuse_host="https://cloud.langfuse.com",
+            ),
+        )
+    ]
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://testserver",
+    ) as client:
+        response = await client.get("/feedback/review?signal=attention")
+
+    assert response.status_code == 200
+    assert "req-review-7" in response.text
+    assert "Too hard and not confidence-inspiring." in response.text
+    assert "weak_retrieval" in response.text
+    assert "medical_keyword:chest pain" in response.text
+    assert "Fallback" in response.text
+    assert "req-review-7" in response.text
+    assert "Langfuse configured via https://cloud.langfuse.com" in response.text
 
 
 async def _request(method: str, path: str, data: dict[str, object] | None = None) -> httpx.Response:

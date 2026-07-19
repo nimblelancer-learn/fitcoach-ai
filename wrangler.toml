@@ -1,0 +1,26 @@
+name = "fitcoach-ai"
+main = "cloudflare/worker.mjs"
+compatibility_date = "2026-07-14"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "FITCOACH_DB"
+database_name = "fitcoach-ai"
+database_id = "fa664f8b-6785-441a-a86c-4df3fa8a3854"
+migrations_dir = "cloudflare/d1/migrations"
+
+[vars]
+APP_ENV = "production"
+APP_VERSION = "phase-02-cloudflare-d1"
+OPENAI_MODEL = "gpt-4.1-mini"
+OPENAI_TIMEOUT_MS = "20000"
+LANGFUSE_BASE_URL = "https://cloud.langfuse.com"
+QDRANT_COLLECTION = "fitcoach_knowledge"
+RAG_EMBEDDING_PROVIDER = "local-hash"
+RAG_EMBEDDING_MODEL = "text-embedding-3-small"
+RAG_EMBEDDING_DIMENSIONS = "256"
+RAG_RETRIEVAL_LIMIT = "3"
+PUBLIC_APP_NAME = "FitCoach AI"

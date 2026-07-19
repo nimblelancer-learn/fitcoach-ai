@@ -1,4 +1,5 @@
 from .common import Equipment, ExperienceLevel, FitnessGoal, TrainingLocation
+from .feedback import DifficultyFeedback, FeedbackRuntimeMetadata, PlanFeedback
 from .profile import UserProfile
 from .workout_plan import (
     ExerciseCategory,
@@ -13,12 +14,15 @@ from .workout_plan import (
 )
 
 __all__ = [
+    "DifficultyFeedback",
     "Equipment",
     "ExperienceLevel",
     "ExerciseCategory",
     "ExerciseItem",
+    "FeedbackRuntimeMetadata",
     "FitnessGoal",
     "Intensity",
+    "PlanFeedback",
     "PrescriptionType",
     "SafetyWarning",
     "SafetyWarningCode",

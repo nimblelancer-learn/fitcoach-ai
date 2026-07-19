@@ -1,46 +1,46 @@
 {% extends "base.html" %}
 
-{% block title %}FitCoach AI MVP Demo{% endblock %}
+{% block title %}FitCoach AI | MVP tiếng Việt{% endblock %}
 
 {% block content %}
   <section class="hero">
-    <span class="eyebrow">Same-stack MVP demo</span>
-    <h1>Generate a beginner-friendly workout plan in one flow.</h1>
+    <span class="eyebrow">MVP tham chiếu FastAPI</span>
+    <h1>Tạo kế hoạch tập luyện trong một luồng đơn giản.</h1>
     <p class="lede">
-      This public MVP uses the same FastAPI app for the interface and the API.
-      It turns a real profile into a structured plan, shows safety warnings,
-      and reports whether retrieval grounding contributed knowledge chunks.
+      Bề mặt tham chiếu này dùng cùng một ứng dụng FastAPI cho cả giao diện và API.
+      Nó biến hồ sơ tập luyện thành kế hoạch có cấu trúc, hiển thị lưu ý an toàn
+      và cho biết retrieval có đóng góp knowledge chunk hay không.
     </p>
-    <div class="hero-grid" aria-label="Demo summary">
+    <div class="hero-grid" aria-label="Tóm tắt bản demo">
       <article class="status-card">
-        <span class="kicker">Surface</span>
-        <strong>One deployed app</strong>
-        <p>Frontend and backend stay in the same service to keep the MVP operationally lean.</p>
+        <span class="kicker">Bề mặt</span>
+        <strong>Một ứng dụng triển khai</strong>
+        <p>Frontend và backend ở cùng một service để MVP gọn và dễ vận hành.</p>
       </article>
       <article class="status-card">
         <span class="kicker">Contract</span>
-        <strong>Structured plan output</strong>
-        <p>The demo calls the same generation logic used by <code>/generate/workout-plan</code>.</p>
+        <strong>Đầu ra có cấu trúc</strong>
+        <p>Bản demo gọi đúng luồng tạo kế hoạch đang dùng cho <code>/generate/workout-plan</code>.</p>
       </article>
       <article class="status-card">
-        <span class="kicker">Safety</span>
-        <strong>Conservative defaults</strong>
-        <p>Medical-risk boundaries and beginner guardrails remain active in the live flow.</p>
+        <span class="kicker">An toàn</span>
+        <strong>Mặc định thận trọng</strong>
+        <p>Ranh giới rủi ro y khoa và guardrail cho người mới vẫn hoạt động trong luồng này.</p>
       </article>
     </div>
   </section>
 
   <div class="main-grid">
     <section class="panel" aria-labelledby="plan-form-title">
-      <h2 id="plan-form-title">Build your profile</h2>
+      <h2 id="plan-form-title">Nhập hồ sơ tập luyện</h2>
       <p class="section-copy">
-        Keep inputs concrete. Use one line per limitation or preference. The
-        first MVP favors clear structured input over hidden automation.
+        Hãy điền ngắn gọn và cụ thể. Mỗi giới hạn hoặc sở thích nên nằm trên
+        một dòng. Bản MVP đầu tiên ưu tiên đầu vào rõ ràng hơn là tự động hóa ẩn.
       </p>
 
       {% if validation_errors %}
         <div class="alert alert-error" role="alert" aria-live="polite">
-          <strong>Fix the profile details below.</strong>
+          <strong>Vui lòng kiểm tra lại các thông tin bên dưới.</strong>
           <ul class="detail-list">
             {% for error in validation_errors %}
               <li>{{ error }}</li>
@@ -51,15 +51,29 @@
 
       {% if service_error %}
         <div class="alert alert-error" role="alert" aria-live="polite">
-          <strong>Generation is currently unavailable.</strong>
+          <strong>Hiện chưa thể tạo kế hoạch.</strong>
           <p>{{ service_error }}</p>
+        </div>
+      {% endif %}
+
+      {% if feedback_success %}
+        <div class="alert alert-success" role="alert" aria-live="polite">
+          <strong>Đã ghi nhận phản hồi.</strong>
+          <p>{{ feedback_success }}</p>
+        </div>
+      {% endif %}
+
+      {% if feedback_error %}
+        <div class="alert alert-error" role="alert" aria-live="polite">
+          <strong>Không thể lưu phản hồi.</strong>
+          <p>{{ feedback_error }}</p>
         </div>
       {% endif %}
 
       <form action="/" method="post">
         <div class="field-group">
-          <span class="kicker">Goal</span>
-          <div class="choice-grid compact" role="radiogroup" aria-label="Fitness goal">
+          <span class="kicker">Mục tiêu</span>
+          <div class="choice-grid compact" role="radiogroup" aria-label="Mục tiêu tập luyện">
             {% for item in goal_choices %}
               <div class="choice-card">
                 <input
@@ -77,7 +91,7 @@
 
         <div class="field-grid">
           <div class="field-group">
-            <label for="experience_level"><span class="kicker">Experience level</span></label>
+            <label for="experience_level"><span class="kicker">Trình độ hiện tại</span></label>
             <select id="experience_level" name="experience_level">
               {% for item in experience_choices %}
                 <option value="{{ item.value }}" {% if form_state.experience_level == item.value %}selected{% endif %}>
@@ -88,7 +102,7 @@
           </div>
 
           <div class="field-group">
-            <label for="training_location"><span class="kicker">Training location</span></label>
+            <label for="training_location"><span class="kicker">Nơi tập</span></label>
             <select id="training_location" name="training_location">
               {% for item in location_choices %}
                 <option value="{{ item.value }}" {% if form_state.training_location == item.value %}selected{% endif %}>
@@ -99,7 +113,7 @@
           </div>
 
           <div class="field-group">
-            <label for="training_days_per_week"><span class="kicker">Days per week</span></label>
+            <label for="training_days_per_week"><span class="kicker">Số buổi mỗi tuần</span></label>
             <input
               id="training_days_per_week"
               name="training_days_per_week"
@@ -111,7 +125,7 @@
           </div>
 
           <div class="field-group">
-            <label for="session_duration_minutes"><span class="kicker">Session duration (minutes)</span></label>
+            <label for="session_duration_minutes"><span class="kicker">Thời lượng mỗi buổi (phút)</span></label>
             <input
               id="session_duration_minutes"
               name="session_duration_minutes"
@@ -124,7 +138,7 @@
         </div>
 
         <div class="field-group">
-          <span class="kicker">Equipment available</span>
+          <span class="kicker">Dụng cụ sẵn có</span>
           <div class="choice-grid compact">
             {% for item in equipment_choices %}
               <div class="choice-card">
@@ -139,77 +153,88 @@
               </div>
             {% endfor %}
           </div>
-          <p class="helper">Select at least one option. The model uses this to avoid impossible recommendations.</p>
+          <p class="helper">Chọn ít nhất một mục để mô hình không đề xuất bài tập không khả thi.</p>
         </div>
 
         <div class="field-group">
-          <label for="injuries_or_limitations_text"><span class="kicker">Limitations or discomfort</span></label>
-          <textarea id="injuries_or_limitations_text" name="injuries_or_limitations_text">{{ form_state.injuries_or_limitations_text }}</textarea>
-          <p class="helper">One line per item. This is for general training constraints, not diagnosis.</p>
+          <label for="injuries_or_limitations_text"><span class="kicker">Giới hạn hoặc cảm giác khó chịu</span></label>
+          <textarea
+            id="injuries_or_limitations_text"
+            name="injuries_or_limitations_text"
+            placeholder="Occasional knee discomfort"
+          >{{ form_state.injuries_or_limitations_text }}</textarea>
+          <p class="helper"><strong>Nhập bằng tiếng Anh ngắn gọn.</strong> Ví dụ có thể copy: <code>Occasional knee discomfort</code>.</p>
+          <p class="helper">Mỗi dòng một ý. Trường này nên dùng tiếng Anh để bản hiện tại retrieval tốt hơn.</p>
         </div>
 
         <div class="field-group">
-          <label for="exercise_preferences_text"><span class="kicker">Exercise preferences</span></label>
-          <textarea id="exercise_preferences_text" name="exercise_preferences_text">{{ form_state.exercise_preferences_text }}</textarea>
-          <p class="helper">Examples: strength training, walking, low-impact cardio, short sessions.</p>
+          <label for="exercise_preferences_text"><span class="kicker">Sở thích tập luyện</span></label>
+          <textarea
+            id="exercise_preferences_text"
+            name="exercise_preferences_text"
+            placeholder="Strength training&#10;Low-impact cardio"
+          >{{ form_state.exercise_preferences_text }}</textarea>
+          <p class="helper"><strong>Nhập bằng tiếng Anh ngắn gọn.</strong> Ví dụ: <code>Strength training</code>, <code>Low-impact cardio</code>.</p>
+          <p class="helper">Không nên nhập tiếng Việt ở ô này nếu bạn muốn giữ chất lượng grounding hiện tại.</p>
         </div>
 
         <div class="button-row">
           <button class="primary-button" type="submit" data-submit-button>
-            Generate workout plan
+            Tạo kế hoạch tập luyện
           </button>
-          <a class="secondary-link" href="/docs">Inspect API contract</a>
+          <a class="secondary-link" href="/docs">Xem API contract</a>
         </div>
       </form>
     </section>
 
     <section class="panel" aria-labelledby="result-title">
-      <h2 id="result-title">Generated plan</h2>
+      <h2 id="result-title">Kế hoạch được tạo</h2>
 
       {% if generated_plan %}
         <div class="alert alert-success" aria-live="polite">
-          <strong>Plan ready.</strong>
+          <strong>Kế hoạch đã sẵn sàng.</strong>
           <p>
-            Retrieval grounding used {{ debug_context.retrieved_chunks | length }}
+            Retrieval grounding đã dùng {{ debug_context.retrieved_chunks | length }}
             knowledge chunk{% if debug_context.retrieved_chunks | length != 1 %}s{% endif %}.
           </p>
         </div>
 
         <article class="result-card">
-          <span class="kicker">Plan title</span>
+          <span class="kicker">Tiêu đề kế hoạch</span>
           <h3>{{ generated_plan.title }}</h3>
           <p>{{ generated_plan.summary }}</p>
+          <p class="helper">Nội dung kế hoạch hiện vẫn ở tiếng Anh để giữ nguyên hành vi generation và grounding của phiên bản này.</p>
 
-          <div class="summary-grid" aria-label="Plan summary">
+          <div class="summary-grid" aria-label="Tóm tắt kế hoạch">
             <div class="summary-chip">
-              <span class="kicker">Goal</span>
+              <span class="kicker">Mục tiêu</span>
               <strong>{{ generated_plan.goal.value.replace("_", " ").title() }}</strong>
-              <span>Primary training direction</span>
+              <span>Hướng tập luyện chính</span>
             </div>
             <div class="summary-chip">
-              <span class="kicker">Experience</span>
+              <span class="kicker">Trình độ</span>
               <strong>{{ generated_plan.experience_level.value.title() }}</strong>
-              <span>Plan complexity target</span>
+              <span>Mức độ phức tạp mục tiêu</span>
             </div>
             <div class="summary-chip">
-              <span class="kicker">Weekly days</span>
+              <span class="kicker">Số buổi/tuần</span>
               <strong>{{ generated_plan.training_days_per_week }}</strong>
-              <span>Scheduled training sessions</span>
+              <span>Số buổi đã lên lịch</span>
             </div>
             <div class="summary-chip">
-              <span class="kicker">Duration</span>
+              <span class="kicker">Thời gian</span>
               <strong>{{ generated_plan.duration_weeks }} weeks</strong>
-              <span>Suggested progression window</span>
+              <span>Khung tăng tiến gợi ý</span>
             </div>
           </div>
 
           <section>
-            <h3>Progression suggestion</h3>
+            <h3>Gợi ý tăng tiến</h3>
             <p>{{ generated_plan.progression_suggestion }}</p>
           </section>
 
           <section>
-            <h3>Safety warnings</h3>
+            <h3>Lưu ý an toàn</h3>
             {% if generated_plan.safety_warnings %}
               <ul class="warning-list">
                 {% for warning in generated_plan.safety_warnings %}
@@ -222,24 +247,24 @@
                 {% endfor %}
               </ul>
             {% else %}
-              <p class="empty-state">No additional plan-level warnings were returned.</p>
+              <p class="empty-state">Không có cảnh báo bổ sung ở cấp độ kế hoạch.</p>
             {% endif %}
           </section>
         </article>
 
-        <section class="day-grid" aria-label="Weekly schedule">
+        <section class="day-grid" aria-label="Lịch tập trong tuần">
           {% for day in generated_plan.weekly_schedule %}
             <article class="workout-day">
-              <span class="kicker">Day {{ day.day_index }}</span>
+              <span class="kicker">Buổi {{ day.day_index }}</span>
               <h3>{{ day.title }}</h3>
               <p>{{ day.focus }}</p>
               <div class="day-meta">
-                <span>{{ day.estimated_duration_minutes }} minutes</span>
+                <span>{{ day.estimated_duration_minutes }} phút</span>
                 <span>{{ day.intensity_note }}</span>
               </div>
 
               <section>
-                <h3>Warm-up</h3>
+                <h3>Khởi động</h3>
                 <ul class="detail-list">
                   {% for item in day.warm_up %}
                     <li>{{ item }}</li>
@@ -248,7 +273,7 @@
               </section>
 
               <section>
-                <h3>Exercises</h3>
+                <h3>Bài tập</h3>
                 <div class="exercise-list">
                   {% for exercise in day.exercises %}
                     <article class="exercise-card">
@@ -268,10 +293,10 @@
                         {% endfor %}
                       </ul>
                       {% if exercise.safety_notes %}
-                        <p><strong>Safety notes:</strong> {{ exercise.safety_notes | join(", ") }}</p>
+                        <p><strong>Ghi chú an toàn:</strong> {{ exercise.safety_notes | join(", ") }}</p>
                       {% endif %}
                       {% if exercise.alternatives %}
-                        <p><strong>Alternatives:</strong> {{ exercise.alternatives | join(", ") }}</p>
+                        <p><strong>Lựa chọn thay thế:</strong> {{ exercise.alternatives | join(", ") }}</p>
                       {% endif %}
                     </article>
                   {% endfor %}
@@ -279,7 +304,7 @@
               </section>
 
               <section>
-                <h3>Cool-down</h3>
+                <h3>Thả lỏng</h3>
                 <ul class="detail-list">
                   {% for item in day.cool_down %}
                     <li>{{ item }}</li>
@@ -291,11 +316,11 @@
         </section>
 
         <section class="panel" aria-labelledby="grounding-title">
-          <h2 id="grounding-title">Grounding details</h2>
+          <h2 id="grounding-title">Chi tiết grounding</h2>
           <p class="section-copy">
-            The current MVP exposes whether retrieval contributed evidence to the
-            prompt. This stays operational and reviewable instead of hiding the
-            retrieval path behind a black box.
+            MVP hiện tại cho biết retrieval có đưa evidence vào prompt hay không.
+            Luồng này vẫn được giữ minh bạch để dễ review thay vì bị ẩn sau một
+            hộp đen.
           </p>
           {% if debug_context.retrieved_chunks %}
             <ul class="meta-pill-list">
@@ -304,21 +329,96 @@
               {% endfor %}
             </ul>
           {% else %}
-            <p class="empty-state">No retrieval chunks were attached for this request.</p>
+            <p class="empty-state">Không có retrieval chunk nào được gắn vào request này.</p>
           {% endif %}
+        </section>
+
+        <section class="panel" aria-labelledby="feedback-title">
+          <h2 id="feedback-title">Bạn thấy kế hoạch này như thế nào?</h2>
+          <p class="section-copy">
+            MVP hiện lưu phản hồi cùng với ảnh chụp chính xác của kế hoạch và request ID.
+            Điều này biến việc dùng thử thành bằng chứng cho eval case và iteration về sau.
+          </p>
+          <form action="/feedback" method="post">
+            <input type="hidden" name="request_id" value="{{ request.state.request_id }}" />
+            <input type="hidden" name="profile_snapshot_json" value="{{ profile_snapshot_json }}" />
+            <input type="hidden" name="generated_plan_json" value="{{ generated_plan.model_dump_json() }}" />
+            <input type="hidden" name="runtime_metadata_json" value="{{ runtime_metadata_json }}" />
+
+            <div class="field-grid">
+              <div class="field-group">
+                <label for="usefulness_rating"><span class="kicker">Mức độ hữu ích (1-5)</span></label>
+                <input id="usefulness_rating" name="usefulness_rating" type="number" min="1" max="5" value="4" />
+              </div>
+
+              <div class="field-group">
+                <label for="difficulty_feedback"><span class="kicker">Độ khó</span></label>
+                <select id="difficulty_feedback" name="difficulty_feedback">
+                  {% for item in difficulty_feedback_choices %}
+                    <option value="{{ item.value }}" {% if item.value == "about_right" %}selected{% endif %}>
+                      {{ item.label }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div class="field-group">
+                <span class="kicker">Bạn thấy an toàn chứ?</span>
+                <div class="choice-grid compact" role="radiogroup" aria-label="Phản hồi về độ an toàn của kế hoạch">
+                  <div class="choice-card">
+                    <input type="radio" id="felt_safe_yes" name="felt_safe" value="true" checked />
+                    <label for="felt_safe_yes">Có</label>
+                  </div>
+                  <div class="choice-card">
+                    <input type="radio" id="felt_safe_no" name="felt_safe" value="false" />
+                    <label for="felt_safe_no">Không</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <span class="kicker">Bạn có muốn theo kế hoạch này không?</span>
+                <div class="choice-grid compact" role="radiogroup" aria-label="Phản hồi về khả năng theo kế hoạch">
+                  <div class="choice-card">
+                    <input type="radio" id="would_follow_yes" name="would_follow_plan" value="true" checked />
+                    <label for="would_follow_yes">Có</label>
+                  </div>
+                  <div class="choice-card">
+                    <input type="radio" id="would_follow_no" name="would_follow_plan" value="false" />
+                    <label for="would_follow_no">Không</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="feedback_text"><span class="kicker">Phản hồi tự do</span></label>
+              <textarea
+                id="feedback_text"
+                name="feedback_text"
+                placeholder="Điểm nào hữu ích, chưa rõ, chưa thực tế hoặc còn thiếu?"
+              ></textarea>
+            </div>
+
+            <div class="button-row">
+              <button class="primary-button" type="submit">Lưu phản hồi</button>
+            </div>
+          </form>
         </section>
       {% else %}
         <article class="result-card">
-          <span class="kicker">Result state</span>
-          <h3>No plan yet</h3>
+          <span class="kicker">Trạng thái kết quả</span>
+          <h3>Chưa có kế hoạch</h3>
           <p class="empty-state">
-            Submit the profile form to generate a structured plan and inspect how
-            the same-stack MVP behaves end to end.
+            Hãy gửi biểu mẫu hồ sơ để tạo kế hoạch có cấu trúc và xem bề mặt
+            FastAPI tham chiếu này hoạt động end-to-end như thế nào.
           </p>
           <ul class="notice-list">
-            <li>The public demo keeps the API and UI in one FastAPI deployment.</li>
-            <li>Safety fallbacks remain active for medical-risk or unsafe beginner outputs.</li>
-            <li>Later milestone work will add feedback capture and external observability.</li>
+            <li>Bản demo tham chiếu giữ API và UI trong cùng một triển khai FastAPI.</li>
+            <li>Safety fallback vẫn hoạt động cho rủi ro y khoa hoặc đầu ra không an toàn cho người mới.</li>
+            <li>Observability ngoài hệ thống và màn hình review phản hồi vẫn là việc của phase sau.</li>
           </ul>
         </article>
       {% endif %}

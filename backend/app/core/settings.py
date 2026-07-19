@@ -5,12 +5,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     enable_dev_learning_portal: bool = True
+    # Legacy local FastAPI feedback path only. Cloudflare production uses D1 bindings.
+    database_url: str = "sqlite:////tmp/fitcoach_ai.db"
     openai_api_key: str | None = None
     openai_model: str | None = None
     openai_timeout_seconds: float = 20.0
     openai_invalid_output_retries: int = 2
     openai_input_cost_per_million_tokens_usd: float | None = None
     openai_output_cost_per_million_tokens_usd: float | None = None
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
+    langfuse_base_url: str = "https://cloud.langfuse.com"
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: str | None = None
     qdrant_collection: str = "fitcoach_knowledge"

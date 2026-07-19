@@ -1,3 +1,6 @@
+# Deprecated: this Blueprint documents the legacy Render deployment path.
+# The main production target is now the Cloudflare Worker + D1 architecture
+# documented in docs/cloudflare-migration-guide.md.
 services:
   - type: web
     name: fitcoach-ai-mvp

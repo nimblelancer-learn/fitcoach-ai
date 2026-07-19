@@ -288,6 +288,12 @@ async def test_generate_workout_plan_revalidates_parsed_model_instance() -> None
 
     assert isinstance(plan, WorkoutPlan)
     assert plan.title == parsed_plan.title
+    metadata = client.get_last_generation_metadata()
+    assert metadata.model_name == "gpt-4.1-mini"
+    assert metadata.used_fallback is False
+    assert metadata.safety_trigger_codes == []
+    assert metadata.generated_at is not None
+    assert metadata.latency_ms >= 0
     assert fake_client.responses.calls == [
         {
             "model": "gpt-4.1-mini",
@@ -360,6 +366,9 @@ async def test_generate_workout_plan_rejects_missing_parsed_output() -> None:
     assert plan.training_days_per_week == 3
     assert len(plan.weekly_schedule) == 3
     assert len(fake_client.responses.calls) == 3
+    metadata = client.get_last_generation_metadata()
+    assert metadata.used_fallback is True
+    assert metadata.safety_trigger_codes == []
 
 
 @pytest.mark.asyncio
@@ -393,6 +402,9 @@ async def test_generate_workout_plan_short_circuits_medical_keyword_triggers(
     assert fake_client.responses.calls == []
     assert "workout_plan_safety_trigger" in caplog.text
     assert "medical_keyword:chest pain" in caplog.text
+    metadata = client.get_last_generation_metadata()
+    assert metadata.used_fallback is True
+    assert metadata.safety_trigger_codes == ["medical_keyword:chest pain"]
 
 
 @pytest.mark.asyncio
@@ -584,6 +596,9 @@ async def test_generate_workout_plan_replaces_high_intensity_beginner_plan_with_
     assert plan.title == "Safety-First Fallback Plan"
     assert "beginner_intensity:high" in plan.safety_warnings[0].message
     assert "workout_plan_safety_trigger" in caplog.text
+    metadata = client.get_last_generation_metadata()
+    assert metadata.used_fallback is True
+    assert metadata.safety_trigger_codes == ["beginner_intensity:high"]
 
 
 @pytest.mark.asyncio
