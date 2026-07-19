@@ -1,0 +1,1266 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FitCoach AI | Workout plan generator</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f1e8;
+        --surface: rgba(255, 252, 247, 0.92);
+        --surface-strong: #fffdf9;
+        --surface-muted: rgba(255, 255, 255, 0.72);
+        --text: #18322f;
+        --muted: #5d6f6b;
+        --line: rgba(24, 50, 47, 0.12);
+        --accent: #176b5f;
+        --accent-strong: #0f4f47;
+        --accent-soft: rgba(23, 107, 95, 0.1);
+        --danger: #a32821;
+        --success: #17603b;
+        --shadow: 0 22px 56px rgba(24, 50, 47, 0.12);
+        --radius-xl: 30px;
+        --radius-lg: 22px;
+        --radius-md: 16px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(23, 107, 95, 0.16), transparent 34%),
+          radial-gradient(circle at top right, rgba(196, 119, 53, 0.16), transparent 28%),
+          linear-gradient(180deg, #fcf8f1 0%, var(--bg) 52%, #efe8dd 100%);
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      body,
+      p,
+      ul {
+        line-height: 1.6;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+        line-height: 1.08;
+      }
+
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 72px;
+      }
+
+      .masthead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+
+      .brand-lockup {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .brand {
+        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+      }
+
+      .brand-note {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .lang-toggle {
+        display: inline-flex;
+        gap: 8px;
+        padding: 6px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 10px 28px rgba(24, 50, 47, 0.08);
+      }
+
+      .lang-button {
+        min-height: 42px;
+        padding: 0 16px;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: var(--muted);
+        font-weight: 600;
+        transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+      }
+
+      .lang-button[aria-pressed="true"] {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .lang-button:hover {
+        transform: translateY(-1px);
+      }
+
+      .hero {
+        display: grid;
+        justify-items: center;
+        text-align: center;
+        gap: 16px;
+        padding: 30px 24px 10px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+        font-size: 0.84rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .hero h1 {
+        max-width: 14ch;
+        font-size: clamp(2.6rem, 5vw, 4.7rem);
+      }
+
+      .lede {
+        max-width: 58ch;
+        margin: 0;
+        color: var(--muted);
+        font-size: 1.04rem;
+      }
+
+      .hero-points {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: min(900px, 100%);
+      }
+
+      .hero-point,
+      .panel,
+      .result-card,
+      .workout-day,
+      .feedback-panel {
+        border: 1px solid var(--line);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+      }
+
+      .hero-point {
+        padding: 18px;
+        border-radius: var(--radius-lg);
+        text-align: left;
+      }
+
+      .hero-point strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .hero-point span {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: 22px;
+        align-items: start;
+        margin-top: 22px;
+      }
+
+      .panel,
+      .result-card,
+      .feedback-panel {
+        border-radius: var(--radius-xl);
+        padding: 24px;
+      }
+
+      .panel-copy,
+      .helper,
+      .muted,
+      li {
+        color: var(--muted);
+      }
+
+      .section-head {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .section-head h2 {
+        font-size: clamp(1.45rem, 2vw, 1.9rem);
+      }
+
+      form,
+      .stack {
+        display: grid;
+        gap: 18px;
+      }
+
+      .field-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      fieldset {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      label,
+      legend {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        min-height: 50px;
+        padding: 12px 14px;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(24, 50, 47, 0.14);
+        background: var(--surface-strong);
+        color: var(--text);
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus,
+      button:focus {
+        outline: 3px solid rgba(23, 107, 95, 0.22);
+        outline-offset: 2px;
+      }
+
+      .choice-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+
+      .choice-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 50px;
+        padding: 12px 14px;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(24, 50, 47, 0.14);
+        background: var(--surface-strong);
+      }
+
+      .choice-card input {
+        width: 18px;
+        min-height: 18px;
+        margin: 0;
+      }
+
+      .helper-callout {
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(196, 119, 53, 0.18);
+        background: rgba(196, 119, 53, 0.08);
+      }
+
+      .helper-callout strong {
+        display: block;
+        margin-bottom: 4px;
+        color: #8a4d16;
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .primary-button,
+      .secondary-button {
+        min-height: 50px;
+        padding: 12px 18px;
+        border: 0;
+        border-radius: 999px;
+        transition: transform 180ms ease, opacity 180ms ease, background 180ms ease;
+      }
+
+      .primary-button {
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+      }
+
+      .secondary-button {
+        background: rgba(23, 107, 95, 0.12);
+        color: var(--accent-strong);
+        font-weight: 700;
+      }
+
+      .primary-button:hover,
+      .secondary-button:hover {
+        transform: translateY(-1px);
+      }
+
+      .primary-button:disabled,
+      .secondary-button:disabled {
+        opacity: 0.68;
+        cursor: wait;
+        transform: none;
+      }
+
+      .alert {
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid transparent;
+      }
+
+      .alert-error {
+        color: var(--danger);
+        background: rgba(163, 40, 33, 0.08);
+        border-color: rgba(163, 40, 33, 0.18);
+      }
+
+      .alert-success {
+        color: var(--success);
+        background: rgba(23, 96, 59, 0.08);
+        border-color: rgba(23, 96, 59, 0.18);
+      }
+
+      .result-shell {
+        display: grid;
+        gap: 18px;
+      }
+
+      .empty-state {
+        display: grid;
+        gap: 10px;
+        padding: 26px;
+        border-radius: var(--radius-lg);
+        border: 1px dashed rgba(24, 50, 47, 0.18);
+        background: var(--surface-muted);
+        text-align: center;
+      }
+
+      .empty-state strong {
+        font-size: 1.04rem;
+      }
+
+      .summary-grid,
+      .plan-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        margin-top: 18px;
+      }
+
+      .summary-chip {
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(23, 107, 95, 0.08);
+      }
+
+      .summary-chip span,
+      .meta {
+        color: var(--muted);
+        font-size: 0.94rem;
+      }
+
+      .summary-chip strong {
+        display: block;
+        margin-top: 6px;
+      }
+
+      .plan-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        margin-top: 18px;
+      }
+
+      .workout-day {
+        padding: 20px;
+        border-radius: var(--radius-lg);
+      }
+
+      .workout-day h3,
+      .result-card h3,
+      .feedback-panel h3 {
+        margin-bottom: 10px;
+      }
+
+      .workout-day ul,
+      .result-card ul {
+        padding-left: 18px;
+      }
+
+      .result-card section + section {
+        margin-top: 18px;
+      }
+
+      .feedback-panel {
+        margin-top: 18px;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      @media (max-width: 980px) {
+        .hero-points,
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        main {
+          width: min(100% - 24px, 1120px);
+          padding-top: 20px;
+        }
+
+        .masthead {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .hero {
+          justify-items: start;
+          text-align: left;
+          padding-inline: 0;
+        }
+
+        .hero h1,
+        .lede,
+        .hero-points {
+          max-width: none;
+          width: 100%;
+        }
+
+        .field-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="masthead">
+        <div class="brand-lockup">
+          <div class="brand">FitCoach AI</div>
+          <div class="brand-note" data-i18n="brandNote">Mẫu kế hoạch tập luyện cá nhân hóa trong vài phút.</div>
+        </div>
+        <div class="lang-toggle" aria-label="Language switcher">
+          <button class="lang-button" type="button" data-lang-choice="vi" aria-pressed="true">Tiếng Việt</button>
+          <button class="lang-button" type="button" data-lang-choice="en" aria-pressed="false">English</button>
+        </div>
+      </header>
+
+      <section class="hero">
+        <span class="eyebrow" data-i18n="eyebrow">Workout plan generator</span>
+        <h1 data-i18n="heroTitle">Tạo một kế hoạch tập luyện gọn, rõ và dễ bắt đầu.</h1>
+        <p class="lede" data-i18n="heroLede">
+          Chọn mục tiêu, nơi tập và dụng cụ bạn có. FitCoach AI sẽ tạo một lịch tập theo tuần và
+          cho phép bạn gửi phản hồi ngay trên cùng một màn hình.
+        </p>
+        <div class="hero-points" aria-label="Product highlights">
+          <article class="hero-point">
+            <strong data-i18n="pointOneTitle">Một luồng duy nhất</strong>
+            <span data-i18n="pointOneBody">Nhập thông tin, xem kế hoạch và để lại nhận xét mà không phải đổi trang.</span>
+          </article>
+          <article class="hero-point">
+            <strong data-i18n="pointTwoTitle">Phù hợp người mới</strong>
+            <span data-i18n="pointTwoBody">Biểu mẫu ưu tiên lựa chọn đơn giản để bạn bắt đầu nhanh hơn.</span>
+          </article>
+          <article class="hero-point">
+            <strong data-i18n="pointThreeTitle">Phản hồi ngay sau khi xem</strong>
+            <span data-i18n="pointThreeBody">Bạn có thể đánh giá độ hữu ích, độ khó và mức an toàn của kế hoạch.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <section class="panel" aria-labelledby="profile-title">
+          <div class="section-head">
+            <h2 id="profile-title" data-i18n="formTitle">Thông tin tập luyện</h2>
+            <p class="panel-copy" data-i18n="formIntro">
+              Điền những thông tin chính trước. Hai ô nhập tự do nên dùng tiếng Anh ngắn để kết
+              quả ổn định hơn.
+            </p>
+          </div>
+
+          <div id="form-alert" class="alert alert-error hidden" role="alert" aria-live="polite"></div>
+
+          <form id="profile-form">
+            <fieldset>
+              <legend data-i18n="goalLegend">Mục tiêu</legend>
+              <div class="choice-grid">
+                <label class="choice-card"><input type="radio" name="goal" value="fat_loss" checked /> <span data-i18n="goalFatLoss">Giảm mỡ</span></label>
+                <label class="choice-card"><input type="radio" name="goal" value="muscle_gain" /> <span data-i18n="goalMuscleGain">Tăng cơ</span></label>
+                <label class="choice-card"><input type="radio" name="goal" value="general_fitness" /> <span data-i18n="goalGeneralFitness">Thể lực tổng quát</span></label>
+                <label class="choice-card"><input type="radio" name="goal" value="endurance" /> <span data-i18n="goalEndurance">Sức bền</span></label>
+              </div>
+            </fieldset>
+
+            <div class="field-grid">
+              <div>
+                <label for="experience_level" data-i18n="experienceLabel">Trình độ hiện tại</label>
+                <select id="experience_level" name="experience_level">
+                  <option value="beginner" data-i18n="experienceBeginner">Người mới</option>
+                  <option value="intermediate" data-i18n="experienceIntermediate">Trung cấp</option>
+                </select>
+              </div>
+              <div>
+                <label for="training_location" data-i18n="locationLabel">Nơi tập</label>
+                <select id="training_location" name="training_location">
+                  <option value="home" data-i18n="locationHome">Ở nhà</option>
+                  <option value="gym" data-i18n="locationGym">Phòng gym</option>
+                  <option value="outdoors" data-i18n="locationOutdoors">Ngoài trời</option>
+                  <option value="mixed" data-i18n="locationMixed">Kết hợp</option>
+                </select>
+              </div>
+              <div>
+                <label for="training_days_per_week" data-i18n="daysLabel">Số buổi mỗi tuần</label>
+                <input id="training_days_per_week" name="training_days_per_week" type="number" min="1" max="7" value="3" />
+              </div>
+              <div>
+                <label for="session_duration_minutes" data-i18n="durationLabel">Thời lượng mỗi buổi (phút)</label>
+                <input id="session_duration_minutes" name="session_duration_minutes" type="number" min="15" max="180" value="45" />
+              </div>
+            </div>
+
+            <fieldset>
+              <legend data-i18n="equipmentLegend">Dụng cụ sẵn có</legend>
+              <div class="choice-grid">
+                <label class="choice-card"><input type="checkbox" name="equipment" value="bodyweight" checked /> <span data-i18n="equipmentBodyweight">Trọng lượng cơ thể</span></label>
+                <label class="choice-card"><input type="checkbox" name="equipment" value="dumbbells" checked /> <span data-i18n="equipmentDumbbells">Tạ tay</span></label>
+                <label class="choice-card"><input type="checkbox" name="equipment" value="resistance_bands" /> <span data-i18n="equipmentBands">Dây kháng lực</span></label>
+                <label class="choice-card"><input type="checkbox" name="equipment" value="kettlebell" /> <span data-i18n="equipmentKettlebell">Kettlebell</span></label>
+                <label class="choice-card"><input type="checkbox" name="equipment" value="barbell" /> <span data-i18n="equipmentBarbell">Barbell</span></label>
+                <label class="choice-card"><input type="checkbox" name="equipment" value="machines" /> <span data-i18n="equipmentMachines">Máy tập</span></label>
+                <label class="choice-card"><input type="checkbox" name="equipment" value="full_gym" /> <span data-i18n="equipmentFullGym">Phòng gym đầy đủ</span></label>
+              </div>
+              <p class="helper" data-i18n="equipmentHelper">Chọn ít nhất một mục để kế hoạch không đề xuất bài tập ngoài điều kiện của bạn.</p>
+            </fieldset>
+
+            <div>
+              <label for="injuries_or_limitations_text" data-i18n="injuriesLabel">Giới hạn hoặc cảm giác khó chịu</label>
+              <div class="helper-callout">
+                <strong data-i18n="englishOnlyTitle">Dùng tiếng Anh ngắn cho hai ô nhập tự do.</strong>
+                <span data-i18n-html="injuriesCallout">
+                  Ví dụ: <code>Occasional knee discomfort</code>
+                </span>
+              </div>
+              <textarea
+                id="injuries_or_limitations_text"
+                name="injuries_or_limitations_text"
+                placeholder="Occasional knee discomfort"
+                data-i18n-placeholder="injuriesPlaceholder"
+              >Occasional knee discomfort</textarea>
+              <p class="helper" data-i18n="injuriesHelper">Mỗi dòng một ý ngắn để hệ thống đọc dễ hơn.</p>
+            </div>
+
+            <div>
+              <label for="exercise_preferences_text" data-i18n="preferencesLabel">Sở thích tập luyện</label>
+              <div class="helper-callout">
+                <strong data-i18n="englishOnlyTitle">Dùng tiếng Anh ngắn cho hai ô nhập tự do.</strong>
+                <span data-i18n-html="preferencesCallout">
+                  Ví dụ: <code>Strength training</code>, <code>Low-impact cardio</code>
+                </span>
+              </div>
+              <textarea
+                id="exercise_preferences_text"
+                name="exercise_preferences_text"
+                placeholder="Strength training&#10;Low-impact cardio"
+                data-i18n-placeholder="preferencesPlaceholder"
+              >Strength training
+Low-impact cardio</textarea>
+              <p class="helper" data-i18n="preferencesHelper">Những cụm ngắn bằng tiếng Anh hiện cho kết quả ổn định nhất.</p>
+            </div>
+
+            <div class="button-row">
+              <button class="primary-button" type="submit" id="generate-button" data-i18n="generateButton">Tạo kế hoạch</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="result-title">
+          <div class="section-head">
+            <h2 id="result-title" data-i18n="resultTitle">Kế hoạch của bạn</h2>
+            <p class="panel-copy" data-i18n="resultIntro">Khi có kết quả, bạn sẽ thấy tóm tắt, lịch theo tuần và vùng gửi phản hồi ở đây.</p>
+          </div>
+          <div class="result-shell">
+            <div id="result-state" class="empty-state">
+              <strong data-i18n="emptyTitle">Chưa có kế hoạch nào.</strong>
+              <span data-i18n="emptyBody">Hoàn thành biểu mẫu rồi bấm tạo kế hoạch để bắt đầu.</span>
+            </div>
+            <div id="result-root" class="hidden"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const COPY = {
+        vi: {
+          documentTitle: "FitCoach AI | Workout plan generator",
+          brandNote: "Mẫu kế hoạch tập luyện cá nhân hóa trong vài phút.",
+          eyebrow: "Workout plan generator",
+          heroTitle: "Tạo một kế hoạch tập luyện gọn, rõ và dễ bắt đầu.",
+          heroLede:
+            "Chọn mục tiêu, nơi tập và dụng cụ bạn có. FitCoach AI sẽ tạo một lịch tập theo tuần và cho phép bạn gửi phản hồi ngay trên cùng một màn hình.",
+          pointOneTitle: "Một luồng duy nhất",
+          pointOneBody: "Nhập thông tin, xem kế hoạch và để lại nhận xét mà không phải đổi trang.",
+          pointTwoTitle: "Phù hợp người mới",
+          pointTwoBody: "Biểu mẫu ưu tiên lựa chọn đơn giản để bạn bắt đầu nhanh hơn.",
+          pointThreeTitle: "Phản hồi ngay sau khi xem",
+          pointThreeBody: "Bạn có thể đánh giá độ hữu ích, độ khó và mức an toàn của kế hoạch.",
+          formTitle: "Thông tin tập luyện",
+          formIntro:
+            "Điền những thông tin chính trước. Hai ô nhập tự do nên dùng tiếng Anh ngắn để kết quả ổn định hơn.",
+          goalLegend: "Mục tiêu",
+          goalFatLoss: "Giảm mỡ",
+          goalMuscleGain: "Tăng cơ",
+          goalGeneralFitness: "Thể lực tổng quát",
+          goalEndurance: "Sức bền",
+          experienceLabel: "Trình độ hiện tại",
+          experienceBeginner: "Người mới",
+          experienceIntermediate: "Trung cấp",
+          locationLabel: "Nơi tập",
+          locationHome: "Ở nhà",
+          locationGym: "Phòng gym",
+          locationOutdoors: "Ngoài trời",
+          locationMixed: "Kết hợp",
+          daysLabel: "Số buổi mỗi tuần",
+          durationLabel: "Thời lượng mỗi buổi (phút)",
+          equipmentLegend: "Dụng cụ sẵn có",
+          equipmentBodyweight: "Trọng lượng cơ thể",
+          equipmentDumbbells: "Tạ tay",
+          equipmentBands: "Dây kháng lực",
+          equipmentKettlebell: "Kettlebell",
+          equipmentBarbell: "Barbell",
+          equipmentMachines: "Máy tập",
+          equipmentFullGym: "Phòng gym đầy đủ",
+          equipmentHelper: "Chọn ít nhất một mục để kế hoạch không đề xuất bài tập ngoài điều kiện của bạn.",
+          injuriesLabel: "Giới hạn hoặc cảm giác khó chịu",
+          englishOnlyTitle: "Dùng tiếng Anh ngắn cho hai ô nhập tự do.",
+          injuriesCallout: "Ví dụ: <code>Occasional knee discomfort</code>",
+          injuriesPlaceholder: "Occasional knee discomfort",
+          injuriesHelper: "Mỗi dòng một ý ngắn để hệ thống đọc dễ hơn.",
+          preferencesLabel: "Sở thích tập luyện",
+          preferencesCallout:
+            "Ví dụ: <code>Strength training</code>, <code>Low-impact cardio</code>",
+          preferencesPlaceholder: "Strength training\nLow-impact cardio",
+          preferencesHelper: "Những cụm ngắn bằng tiếng Anh hiện cho kết quả ổn định nhất.",
+          generateButton: "Tạo kế hoạch",
+          generatingButton: "Đang tạo...",
+          resultTitle: "Kế hoạch của bạn",
+          resultIntro: "Khi có kết quả, bạn sẽ thấy tóm tắt, lịch theo tuần và vùng gửi phản hồi ở đây.",
+          emptyTitle: "Chưa có kế hoạch nào.",
+          emptyBody: "Hoàn thành biểu mẫu rồi bấm tạo kế hoạch để bắt đầu.",
+          readyTitle: "Kế hoạch đã sẵn sàng.",
+          resultNote: "Nội dung kế hoạch hiện vẫn giữ nguyên ngôn ngữ tạo sinh để tránh làm sai ý khi hiển thị.",
+          summaryGoal: "Mục tiêu",
+          summaryExperience: "Trình độ",
+          summaryDays: "Số buổi/tuần",
+          summaryWeeks: "Thời gian",
+          weeksUnit: "tuần",
+          dayDurationUnit: "phút",
+          warmUpTitle: "Khởi động",
+          exercisesTitle: "Bài tập",
+          coolDownTitle: "Thả lỏng",
+          progressionTitle: "Gợi ý tăng tiến",
+          safetyTitle: "Lưu ý an toàn",
+          noWarnings: "Không có cảnh báo bổ sung ở cấp độ kế hoạch.",
+          feedbackTitle: "Gửi phản hồi",
+          feedbackIntro: "Đánh giá nhanh để cho biết kế hoạch này có hữu ích và thực tế với bạn hay không.",
+          usefulnessLabel: "Mức độ hữu ích",
+          difficultyLabel: "Độ khó",
+          difficultyRight: "Vừa sức",
+          difficultyEasy: "Quá dễ",
+          difficultyHard: "Quá khó",
+          safeLabel: "Bạn thấy an toàn chứ?",
+          yesLabel: "Có",
+          noLabel: "Không",
+          followLabel: "Bạn có muốn theo kế hoạch này không?",
+          feedbackTextLabel: "Ghi chú phản hồi",
+          feedbackPlaceholder: "Điểm nào hữu ích, chưa rõ hoặc chưa hợp lý?",
+          feedbackButton: "Lưu phản hồi",
+          feedbackSavingButton: "Đang lưu...",
+          feedbackSaved: "Đã lưu phản hồi cho kế hoạch này.",
+          invalidRequest: "Thông tin bạn nhập chưa hợp lệ. Hãy kiểm tra lại các trường và thử lại.",
+          serviceNotConfigured: "Dịch vụ tạo kế hoạch chưa được cấu hình trong môi trường hiện tại.",
+          generationMissing: "Không tìm thấy kế hoạch tương ứng. Hãy tạo lại kế hoạch rồi gửi phản hồi.",
+          genericGenerateError: "Không thể tạo kế hoạch lúc này.",
+          genericFeedbackError: "Không thể lưu phản hồi lúc này.",
+          englishOnlyInjuries:
+            "Ô giới hạn hoặc cảm giác khó chịu cần nhập bằng tiếng Anh ngắn gọn. Ví dụ: Occasional knee discomfort.",
+          englishOnlyPreferences:
+            "Ô sở thích tập luyện cần nhập bằng tiếng Anh ngắn gọn. Ví dụ: Strength training.",
+          severityInfo: "Thông tin",
+          severityCaution: "Lưu ý",
+          severityStop: "Dừng lại",
+          goal_fat_loss: "Giảm mỡ",
+          goal_muscle_gain: "Tăng cơ",
+          goal_general_fitness: "Thể lực tổng quát",
+          goal_endurance: "Sức bền",
+          experience_beginner: "Người mới",
+          experience_intermediate: "Trung cấp",
+          intensity_low: "Nhẹ",
+          intensity_moderate: "Vừa",
+          intensity_high: "Cao",
+        },
+        en: {
+          documentTitle: "FitCoach AI | Workout plan generator",
+          brandNote: "A personalized workout plan draft in a few minutes.",
+          eyebrow: "Workout plan generator",
+          heroTitle: "Build a clear workout plan you can start right away.",
+          heroLede:
+            "Choose your goal, training setup, and available equipment. FitCoach AI will draft a weekly plan and let you leave feedback on the same screen.",
+          pointOneTitle: "One focused flow",
+          pointOneBody: "Fill in your details, review the plan, and leave feedback without jumping between pages.",
+          pointTwoTitle: "Beginner-friendly",
+          pointTwoBody: "The form keeps the choices simple so you can get to a usable plan faster.",
+          pointThreeTitle: "Feedback right after review",
+          pointThreeBody: "Rate the plan for usefulness, difficulty, and safety as soon as you read it.",
+          formTitle: "Training profile",
+          formIntro:
+            "Start with the essentials. The two free-text fields work best with short English notes for now.",
+          goalLegend: "Goal",
+          goalFatLoss: "Fat loss",
+          goalMuscleGain: "Muscle gain",
+          goalGeneralFitness: "General fitness",
+          goalEndurance: "Endurance",
+          experienceLabel: "Current level",
+          experienceBeginner: "Beginner",
+          experienceIntermediate: "Intermediate",
+          locationLabel: "Training location",
+          locationHome: "Home",
+          locationGym: "Gym",
+          locationOutdoors: "Outdoors",
+          locationMixed: "Mixed",
+          daysLabel: "Days per week",
+          durationLabel: "Session length (minutes)",
+          equipmentLegend: "Available equipment",
+          equipmentBodyweight: "Bodyweight",
+          equipmentDumbbells: "Dumbbells",
+          equipmentBands: "Resistance bands",
+          equipmentKettlebell: "Kettlebell",
+          equipmentBarbell: "Barbell",
+          equipmentMachines: "Machines",
+          equipmentFullGym: "Full gym",
+          equipmentHelper: "Choose at least one option so the plan stays realistic for your setup.",
+          injuriesLabel: "Limitations or discomfort",
+          englishOnlyTitle: "Use short English text in both free-text fields.",
+          injuriesCallout: "Example: <code>Occasional knee discomfort</code>",
+          injuriesPlaceholder: "Occasional knee discomfort",
+          injuriesHelper: "One short point per line is easiest for the current system to read.",
+          preferencesLabel: "Exercise preferences",
+          preferencesCallout:
+            "Examples: <code>Strength training</code>, <code>Low-impact cardio</code>",
+          preferencesPlaceholder: "Strength training\nLow-impact cardio",
+          preferencesHelper: "Short English phrases currently produce the most stable results.",
+          generateButton: "Generate plan",
+          generatingButton: "Generating...",
+          resultTitle: "Your plan",
+          resultIntro: "When a result is ready, you will see the summary, weekly schedule, and feedback form here.",
+          emptyTitle: "No plan yet.",
+          emptyBody: "Complete the form and generate a plan to get started.",
+          readyTitle: "Your plan is ready.",
+          resultNote: "The generated plan content stays in its original output language to avoid changing the meaning during display.",
+          summaryGoal: "Goal",
+          summaryExperience: "Level",
+          summaryDays: "Days/week",
+          summaryWeeks: "Duration",
+          weeksUnit: "weeks",
+          dayDurationUnit: "minutes",
+          warmUpTitle: "Warm-up",
+          exercisesTitle: "Exercises",
+          coolDownTitle: "Cool-down",
+          progressionTitle: "Progression",
+          safetyTitle: "Safety notes",
+          noWarnings: "No additional plan-level warnings were returned.",
+          feedbackTitle: "Send feedback",
+          feedbackIntro: "Leave a quick rating so you can tell us whether this plan felt useful and realistic.",
+          usefulnessLabel: "Usefulness",
+          difficultyLabel: "Difficulty",
+          difficultyRight: "About right",
+          difficultyEasy: "Too easy",
+          difficultyHard: "Too hard",
+          safeLabel: "Did it feel safe?",
+          yesLabel: "Yes",
+          noLabel: "No",
+          followLabel: "Would you follow this plan?",
+          feedbackTextLabel: "Feedback notes",
+          feedbackPlaceholder: "What felt useful, unclear, or unrealistic?",
+          feedbackButton: "Save feedback",
+          feedbackSavingButton: "Saving...",
+          feedbackSaved: "Feedback saved for this plan.",
+          invalidRequest: "Your input is invalid. Review the fields and try again.",
+          serviceNotConfigured: "The workout generation service is not configured in this environment.",
+          generationMissing: "The related plan could not be found. Generate a new plan and try again.",
+          genericGenerateError: "The plan could not be generated right now.",
+          genericFeedbackError: "Feedback could not be saved right now.",
+          englishOnlyInjuries:
+            "The limitations field must use short English text. Example: Occasional knee discomfort.",
+          englishOnlyPreferences:
+            "The exercise preferences field must use short English text. Example: Strength training.",
+          severityInfo: "Info",
+          severityCaution: "Caution",
+          severityStop: "Stop",
+          goal_fat_loss: "Fat loss",
+          goal_muscle_gain: "Muscle gain",
+          goal_general_fitness: "General fitness",
+          goal_endurance: "Endurance",
+          experience_beginner: "Beginner",
+          experience_intermediate: "Intermediate",
+          intensity_low: "Low",
+          intensity_moderate: "Moderate",
+          intensity_high: "High",
+        },
+      };
+
+      const state = {
+        requestId: null,
+        profile: null,
+        plan: null,
+        language: "vi",
+        feedbackDraft: null,
+        feedbackMessage: null,
+      };
+
+      const form = document.getElementById("profile-form");
+      const formAlert = document.getElementById("form-alert");
+      const generateButton = document.getElementById("generate-button");
+      const resultState = document.getElementById("result-state");
+      const resultRoot = document.getElementById("result-root");
+      const languageButtons = document.querySelectorAll("[data-lang-choice]");
+
+      languageButtons.forEach((button) => {
+        button.addEventListener("click", () => setLanguage(button.dataset.langChoice));
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearAlert();
+        generateButton.disabled = true;
+        generateButton.textContent = currentCopy().generatingButton;
+
+        try {
+          const profile = collectProfile();
+          validateEnglishOnlyFields(profile);
+          const response = await fetch("/api/workout-plans", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(profile),
+          });
+          const body = await response.json();
+          if (!response.ok) {
+            throw new Error(localizeApiError(body?.error?.message, currentCopy().genericGenerateError));
+          }
+
+          state.requestId = response.headers.get("X-Request-ID");
+          state.profile = profile;
+          state.plan = body;
+          state.feedbackDraft = null;
+          state.feedbackMessage = null;
+          renderPlan(body);
+        } catch (error) {
+          showAlert(error.message || currentCopy().genericGenerateError);
+        } finally {
+          generateButton.disabled = false;
+          generateButton.textContent = currentCopy().generateButton;
+        }
+      });
+
+      function currentCopy() {
+        return COPY[state.language];
+      }
+
+      function setLanguage(language) {
+        if (!COPY[language] || language === state.language) {
+          return;
+        }
+        state.feedbackDraft = readFeedbackDraft();
+        state.language = language;
+        applyStaticCopy();
+        clearAlert();
+        if (state.plan) {
+          renderPlan(state.plan);
+        }
+      }
+
+      function applyStaticCopy() {
+        const copy = currentCopy();
+        document.documentElement.lang = state.language;
+        document.title = copy.documentTitle;
+
+        document.querySelectorAll("[data-i18n]").forEach((node) => {
+          const key = node.dataset.i18n;
+          if (copy[key]) {
+            node.textContent = copy[key];
+          }
+        });
+
+        document.querySelectorAll("[data-i18n-html]").forEach((node) => {
+          const key = node.dataset.i18nHtml;
+          if (copy[key]) {
+            node.innerHTML = copy[key];
+          }
+        });
+
+        document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+          const key = node.dataset.i18nPlaceholder;
+          if (copy[key]) {
+            node.setAttribute("placeholder", copy[key]);
+          }
+        });
+
+        languageButtons.forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.langChoice === state.language));
+        });
+
+        if (!generateButton.disabled) {
+          generateButton.textContent = copy.generateButton;
+        }
+
+        const feedbackButton = document.getElementById("feedback-button");
+        if (feedbackButton && !feedbackButton.disabled) {
+          feedbackButton.textContent = copy.feedbackButton;
+        }
+      }
+
+      function collectProfile() {
+        const data = new FormData(form);
+        return {
+          goal: data.get("goal"),
+          experience_level: data.get("experience_level"),
+          training_days_per_week: Number(data.get("training_days_per_week")),
+          session_duration_minutes: Number(data.get("session_duration_minutes")),
+          equipment: data.getAll("equipment"),
+          training_location: data.get("training_location"),
+          injuries_or_limitations: splitLines(data.get("injuries_or_limitations_text")),
+          exercise_preferences: splitLines(data.get("exercise_preferences_text")),
+        };
+      }
+
+      function splitLines(value) {
+        return String(value || "")
+          .split("\n")
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      function showAlert(message) {
+        formAlert.textContent = message;
+        formAlert.classList.remove("hidden");
+      }
+
+      function clearAlert() {
+        formAlert.textContent = "";
+        formAlert.classList.add("hidden");
+      }
+
+      function renderPlan(plan) {
+        const copy = currentCopy();
+        const feedbackDraft = state.feedbackDraft || readFeedbackDraft();
+
+        resultState.classList.add("hidden");
+        resultRoot.classList.remove("hidden");
+        resultRoot.innerHTML = `
+          <div class="stack">
+            <div class="alert alert-success" role="status" aria-live="polite">
+              <strong>${escapeHtml(copy.readyTitle)}</strong>
+            </div>
+            <article class="result-card">
+              <h3>${escapeHtml(plan.title)}</h3>
+              <p class="panel-copy">${escapeHtml(plan.summary)}</p>
+              <p class="helper">${escapeHtml(copy.resultNote)}</p>
+              <div class="summary-grid">
+                <div class="summary-chip"><span>${escapeHtml(copy.summaryGoal)}</span><strong>${escapeHtml(formatValue(`goal_${plan.goal}`))}</strong></div>
+                <div class="summary-chip"><span>${escapeHtml(copy.summaryExperience)}</span><strong>${escapeHtml(formatValue(`experience_${plan.experience_level}`))}</strong></div>
+                <div class="summary-chip"><span>${escapeHtml(copy.summaryDays)}</span><strong>${escapeHtml(String(plan.training_days_per_week))}</strong></div>
+                <div class="summary-chip"><span>${escapeHtml(copy.summaryWeeks)}</span><strong>${escapeHtml(String(plan.duration_weeks))} ${escapeHtml(copy.weeksUnit)}</strong></div>
+              </div>
+              <div class="plan-grid">
+                ${plan.weekly_schedule.map((day) => renderDay(day, copy)).join("")}
+              </div>
+              <section>
+                <h3>${escapeHtml(copy.progressionTitle)}</h3>
+                <p class="panel-copy">${escapeHtml(plan.progression_suggestion)}</p>
+              </section>
+              <section>
+                <h3>${escapeHtml(copy.safetyTitle)}</h3>
+                ${
+                  plan.safety_warnings.length
+                    ? `<ul>${plan.safety_warnings
+                        .map(
+                          (warning) =>
+                            `<li><strong>${escapeHtml(formatSeverity(warning.severity))}:</strong> ${escapeHtml(
+                              warning.message,
+                            )}<br /><span>${escapeHtml(warning.recommended_action)}</span></li>`,
+                        )
+                        .join("")}</ul>`
+                    : `<p class="muted">${escapeHtml(copy.noWarnings)}</p>`
+                }
+              </section>
+            </article>
+            ${renderFeedbackPanel(feedbackDraft)}
+          </div>
+        `;
+
+        const feedbackForm = document.getElementById("feedback-form");
+        feedbackForm.addEventListener("submit", handleFeedbackSubmit);
+
+        const feedbackAlert = document.getElementById("feedback-alert");
+        if (state.feedbackMessage && feedbackAlert) {
+          feedbackAlert.className = `alert ${state.feedbackMessage.type === "success" ? "alert-success" : "alert-error"}`;
+          feedbackAlert.textContent = state.feedbackMessage.message;
+        }
+      }
+
+      function renderDay(day, copy) {
+        return `
+          <article class="workout-day">
+            <h3>${escapeHtml(day.title)}</h3>
+            <p>${escapeHtml(day.focus)}</p>
+            <div class="meta">${escapeHtml(String(day.estimated_duration_minutes))} ${escapeHtml(copy.dayDurationUnit)}</div>
+            <h3>${escapeHtml(copy.warmUpTitle)}</h3>
+            <ul>${day.warm_up.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+            <h3>${escapeHtml(copy.exercisesTitle)}</h3>
+            <ul>${day.exercises
+              .map(
+                (exercise) =>
+                  `<li><strong>${escapeHtml(exercise.name)}</strong> (${escapeHtml(
+                    formatValue(`intensity_${exercise.intensity}`),
+                  )})</li>`,
+              )
+              .join("")}</ul>
+            <h3>${escapeHtml(copy.coolDownTitle)}</h3>
+            <ul>${day.cool_down.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+          </article>
+        `;
+      }
+
+      function renderFeedbackPanel(draft = {}) {
+        const copy = currentCopy();
+        return `
+          <section class="feedback-panel">
+            <h3>${escapeHtml(copy.feedbackTitle)}</h3>
+            <p class="panel-copy">${escapeHtml(copy.feedbackIntro)}</p>
+            <div id="feedback-alert" class="alert hidden" role="status" aria-live="polite"></div>
+            <form id="feedback-form">
+              <div class="field-grid">
+                <div>
+                  <label for="usefulness_rating">${escapeHtml(copy.usefulnessLabel)}</label>
+                  <input id="usefulness_rating" name="usefulness_rating" type="number" min="1" max="5" value="${escapeHtml(String(draft.usefulness_rating ?? 5))}" />
+                </div>
+                <div>
+                  <label for="difficulty_feedback">${escapeHtml(copy.difficultyLabel)}</label>
+                  <select id="difficulty_feedback" name="difficulty_feedback">
+                    <option value="about_right" ${draft.difficulty_feedback === "about_right" || draft.difficulty_feedback == null ? "selected" : ""}>${escapeHtml(copy.difficultyRight)}</option>
+                    <option value="too_easy" ${draft.difficulty_feedback === "too_easy" ? "selected" : ""}>${escapeHtml(copy.difficultyEasy)}</option>
+                    <option value="too_hard" ${draft.difficulty_feedback === "too_hard" ? "selected" : ""}>${escapeHtml(copy.difficultyHard)}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field-grid">
+                <div>
+                  <label for="felt_safe">${escapeHtml(copy.safeLabel)}</label>
+                  <select id="felt_safe" name="felt_safe">
+                    <option value="true" ${draft.felt_safe !== false ? "selected" : ""}>${escapeHtml(copy.yesLabel)}</option>
+                    <option value="false" ${draft.felt_safe === false ? "selected" : ""}>${escapeHtml(copy.noLabel)}</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="would_follow_plan">${escapeHtml(copy.followLabel)}</label>
+                  <select id="would_follow_plan" name="would_follow_plan">
+                    <option value="true" ${draft.would_follow_plan !== false ? "selected" : ""}>${escapeHtml(copy.yesLabel)}</option>
+                    <option value="false" ${draft.would_follow_plan === false ? "selected" : ""}>${escapeHtml(copy.noLabel)}</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label for="feedback_text">${escapeHtml(copy.feedbackTextLabel)}</label>
+                <textarea id="feedback_text" name="feedback_text" placeholder="${escapeHtml(copy.feedbackPlaceholder)}">${escapeHtml(draft.feedback_text || "")}</textarea>
+              </div>
+              <div class="button-row">
+                <button class="secondary-button" type="submit" id="feedback-button">${escapeHtml(copy.feedbackButton)}</button>
+              </div>
+            </form>
+          </section>
+        `;
+      }
+
+      async function handleFeedbackSubmit(event) {
+        event.preventDefault();
+        const copy = currentCopy();
+        const button = document.getElementById("feedback-button");
+        const alert = document.getElementById("feedback-alert");
+        const data = new FormData(event.currentTarget);
+        state.feedbackDraft = {
+          usefulness_rating: Number(data.get("usefulness_rating")),
+          difficulty_feedback: data.get("difficulty_feedback"),
+          felt_safe: data.get("felt_safe") === "true",
+          would_follow_plan: data.get("would_follow_plan") === "true",
+          feedback_text: String(data.get("feedback_text") || "").trim(),
+        };
+
+        button.disabled = true;
+        button.textContent = copy.feedbackSavingButton;
+        alert.className = "alert hidden";
+        alert.textContent = "";
+
+        try {
+          const response = await fetch("/api/feedback", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              request_id: state.requestId,
+              profile: state.profile,
+              generated_plan: state.plan,
+              feedback: {
+                usefulness_rating: state.feedbackDraft.usefulness_rating,
+                difficulty_feedback: state.feedbackDraft.difficulty_feedback,
+                felt_safe: state.feedbackDraft.felt_safe,
+                would_follow_plan: state.feedbackDraft.would_follow_plan,
+                feedback_text: state.feedbackDraft.feedback_text || null,
+              },
+            }),
+          });
+          const body = await response.json();
+          if (!response.ok) {
+            throw new Error(localizeApiError(body?.error?.message, copy.genericFeedbackError));
+          }
+          state.feedbackMessage = { type: "success", message: copy.feedbackSaved };
+          alert.className = "alert alert-success";
+          alert.textContent = copy.feedbackSaved;
+        } catch (error) {
+          const message = error.message || copy.genericFeedbackError;
+          state.feedbackMessage = { type: "error", message };
+          alert.className = "alert alert-error";
+          alert.textContent = message;
+        } finally {
+          button.disabled = false;
+          button.textContent = copy.feedbackButton;
+        }
+      }
+
+      function readFeedbackDraft() {
+        const formNode = document.getElementById("feedback-form");
+        if (!formNode) {
+          return state.feedbackDraft;
+        }
+        const data = new FormData(formNode);
+        return {
+          usefulness_rating: Number(data.get("usefulness_rating")),
+          difficulty_feedback: data.get("difficulty_feedback"),
+          felt_safe: data.get("felt_safe") === "true",
+          would_follow_plan: data.get("would_follow_plan") === "true",
+          feedback_text: String(data.get("feedback_text") || "").trim(),
+        };
+      }
+
+      function validateEnglishOnlyFields(profile) {
+        if (containsVietnameseCharacters(profile.injuries_or_limitations.join(" "))) {
+          throw new Error(currentCopy().englishOnlyInjuries);
+        }
+        if (containsVietnameseCharacters(profile.exercise_preferences.join(" "))) {
+          throw new Error(currentCopy().englishOnlyPreferences);
+        }
+      }
+
+      function containsVietnameseCharacters(value) {
+        return /[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i.test(
+          String(value || ""),
+        );
+      }
+
+      function localizeApiError(message, fallbackMessage) {
+        const normalized = String(message || "").trim();
+        if (!normalized) {
+          return fallbackMessage;
+        }
+        if (normalized === "The request data is invalid.") {
+          return currentCopy().invalidRequest;
+        }
+        if (normalized === "The workout generation service is not configured.") {
+          return currentCopy().serviceNotConfigured;
+        }
+        if (
+          normalized ===
+          "The associated generation run was not found. Generate a new plan and try again."
+        ) {
+          return currentCopy().generationMissing;
+        }
+        return `${fallbackMessage} ${normalized}`;
+      }
+
+      function formatValue(key) {
+        return currentCopy()[key] || key.replaceAll("_", " ");
+      }
+
+      function formatSeverity(severity) {
+        const lookup = {
+          info: currentCopy().severityInfo,
+          caution: currentCopy().severityCaution,
+          stop: currentCopy().severityStop,
+        };
+        return lookup[severity] || severity;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      applyStaticCopy();
+    </script>
+  </body>
+</html>
