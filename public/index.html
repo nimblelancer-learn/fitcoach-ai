@@ -1409,10 +1409,6 @@
           .replaceAll("'", "&#39;");
       }
 
-      applyStaticCopy();
-    </script>
-  </body>
-</html>
       function renderProfileFieldOptions() {
         profileFields.forEach(({ fieldName, containerId }) => {
           const container = document.getElementById(containerId);
@@ -1481,3 +1477,8 @@
           otherInput.removeAttribute("aria-invalid");
         }
       }
+
+      applyStaticCopy();
+    </script>
+  </body>
+</html>
