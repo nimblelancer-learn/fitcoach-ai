@@ -311,6 +311,58 @@
         color: #8a4d16;
       }
 
+      .preset-panel {
+        display: grid;
+        gap: 12px;
+        margin-top: 12px;
+        padding: 16px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.46);
+      }
+
+      .preset-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .preset-card {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        min-height: 64px;
+        padding: 14px;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(24, 50, 47, 0.14);
+        background: var(--surface-strong);
+      }
+
+      .preset-card input {
+        width: 18px;
+        min-height: 18px;
+        margin: 4px 0 0;
+      }
+
+      .preset-card-title {
+        display: block;
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      .preset-card-note {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .custom-input-wrap {
+        display: grid;
+        gap: 8px;
+      }
+
       .button-row {
         display: flex;
         flex-wrap: wrap;
@@ -585,40 +637,59 @@
               <p class="helper" data-i18n="equipmentHelper">Chọn ít nhất một mục để kế hoạch không đề xuất bài tập ngoài điều kiện của bạn.</p>
             </fieldset>
 
-            <div>
-              <label for="injuries_or_limitations_text" data-i18n="injuriesLabel">Giới hạn hoặc cảm giác khó chịu</label>
+            <fieldset>
+              <legend data-i18n="injuriesLabel">Giới hạn hoặc cảm giác khó chịu</legend>
               <div class="helper-callout">
-                <strong data-i18n="englishOnlyTitle">Dùng tiếng Anh ngắn cho hai ô nhập tự do.</strong>
+                <strong data-i18n="presetsRecommendedTitle">Nên chọn từ các gợi ý có sẵn trước.</strong>
                 <span data-i18n-html="injuriesCallout">
-                  Ví dụ: <code>Occasional knee discomfort</code>
+                  Dùng các lựa chọn song ngữ bên dưới. Nếu chọn mục <code>Other</code>, hãy nhập thêm bằng tiếng Anh.
                 </span>
               </div>
-              <textarea
-                id="injuries_or_limitations_text"
-                name="injuries_or_limitations_text"
-                placeholder="Occasional knee discomfort"
-                data-i18n-placeholder="injuriesPlaceholder"
-              >Occasional knee discomfort</textarea>
-              <p class="helper" data-i18n="injuriesHelper">Mỗi dòng một ý ngắn để hệ thống đọc dễ hơn.</p>
-            </div>
+              <div class="preset-panel">
+                <p class="helper" data-i18n="injuriesPresetIntro">
+                  Chọn các giới hạn phù hợp nhất. Người dùng tiếng Việt có thể dựa vào nghĩa tiếng Việt, còn hệ thống vẫn gửi giá trị tiếng Anh chuẩn.
+                </p>
+                <div id="injuries_or_limitations_presets" class="preset-grid"></div>
+              </div>
+              <div id="injuries_or_limitations_other_wrap" class="custom-input-wrap hidden">
+                <label for="injuries_or_limitations_other" data-i18n="otherInjuriesLabel">Mô tả thêm bằng tiếng Anh</label>
+                <textarea
+                  id="injuries_or_limitations_other"
+                  name="injuries_or_limitations_other"
+                  placeholder="Occasional knee discomfort"
+                  data-i18n-placeholder="otherInjuriesPlaceholder"
+                ></textarea>
+                <p class="helper" data-i18n-html="otherEnglishHelper">Mỗi dòng một ý ngắn bằng tiếng Anh. Ví dụ: <code>Occasional knee discomfort</code></p>
+              </div>
+              <p class="helper" data-i18n="injuriesHelper">Chọn sẵn nếu có thể. Dùng mục khác chỉ khi bạn cần bổ sung ngoài danh sách.</p>
+            </fieldset>
 
-            <div>
-              <label for="exercise_preferences_text" data-i18n="preferencesLabel">Sở thích tập luyện</label>
+            <fieldset>
+              <legend data-i18n="preferencesLabel">Sở thích tập luyện</legend>
               <div class="helper-callout">
-                <strong data-i18n="englishOnlyTitle">Dùng tiếng Anh ngắn cho hai ô nhập tự do.</strong>
+                <strong data-i18n="presetsRecommendedTitle">Nên chọn từ các gợi ý có sẵn trước.</strong>
                 <span data-i18n-html="preferencesCallout">
-                  Ví dụ: <code>Strength training</code>, <code>Low-impact cardio</code>
+                  Gợi ý bên dưới đã có sẵn nghĩa tiếng Việt. Nếu bạn thêm mục riêng, hãy nhập bằng tiếng Anh.
                 </span>
               </div>
-              <textarea
-                id="exercise_preferences_text"
-                name="exercise_preferences_text"
-                placeholder="Strength training&#10;Low-impact cardio"
-                data-i18n-placeholder="preferencesPlaceholder"
-              >Strength training
-Low-impact cardio</textarea>
-              <p class="helper" data-i18n="preferencesHelper">Những cụm ngắn bằng tiếng Anh hiện cho kết quả ổn định nhất.</p>
-            </div>
+              <div class="preset-panel">
+                <p class="helper" data-i18n="preferencesPresetIntro">
+                  Chọn kiểu bài tập bạn muốn ưu tiên để giảm cảm giác không biết nên viết gì.
+                </p>
+                <div id="exercise_preferences_presets" class="preset-grid"></div>
+              </div>
+              <div id="exercise_preferences_other_wrap" class="custom-input-wrap hidden">
+                <label for="exercise_preferences_other" data-i18n="otherPreferencesLabel">Mô tả thêm bằng tiếng Anh</label>
+                <textarea
+                  id="exercise_preferences_other"
+                  name="exercise_preferences_other"
+                  placeholder="Strength training&#10;Low-impact cardio"
+                  data-i18n-placeholder="otherPreferencesPlaceholder"
+                ></textarea>
+                <p class="helper" data-i18n-html="otherEnglishPreferencesHelper">Mỗi dòng một ý ngắn bằng tiếng Anh. Ví dụ: <code>Strength training</code></p>
+              </div>
+              <p class="helper" data-i18n="preferencesHelper">Giá trị gửi đi luôn được chuẩn hóa thành cụm tiếng Anh ngắn.</p>
+            </fieldset>
 
             <div class="button-row">
               <button class="primary-button" type="submit" id="generate-button" data-i18n="generateButton">Tạo kế hoạch</button>
@@ -642,7 +713,15 @@ Low-impact cardio</textarea>
       </section>
     </main>
 
-    <script>
+    <script type="module">
+      import {
+        PROFILE_FIELD_PRESETS,
+        OTHER_OPTION_VALUE,
+        containsVietnameseCharacters,
+        getOtherInputId,
+        normalizeProfileFieldSelection,
+      } from "./profile-fields.mjs";
+
       const COPY = {
         vi: {
           documentTitle: "FitCoach AI | Workout plan generator",
@@ -659,7 +738,7 @@ Low-impact cardio</textarea>
           pointThreeBody: "Bạn có thể đánh giá độ hữu ích, độ khó và mức an toàn của kế hoạch.",
           formTitle: "Thông tin tập luyện",
           formIntro:
-            "Điền những thông tin chính trước. Hai ô nhập tự do nên dùng tiếng Anh ngắn để kết quả ổn định hơn.",
+            "Điền những thông tin chính trước. Hai trường bên dưới ưu tiên chọn sẵn; nếu cần thêm mục riêng thì hãy nhập bằng tiếng Anh.",
           goalLegend: "Mục tiêu",
           goalFatLoss: "Giảm mỡ",
           goalMuscleGain: "Tăng cơ",
@@ -685,15 +764,28 @@ Low-impact cardio</textarea>
           equipmentFullGym: "Phòng gym đầy đủ",
           equipmentHelper: "Chọn ít nhất một mục để kế hoạch không đề xuất bài tập ngoài điều kiện của bạn.",
           injuriesLabel: "Giới hạn hoặc cảm giác khó chịu",
-          englishOnlyTitle: "Dùng tiếng Anh ngắn cho hai ô nhập tự do.",
-          injuriesCallout: "Ví dụ: <code>Occasional knee discomfort</code>",
-          injuriesPlaceholder: "Occasional knee discomfort",
-          injuriesHelper: "Mỗi dòng một ý ngắn để hệ thống đọc dễ hơn.",
+          presetsRecommendedTitle: "Nên chọn từ các gợi ý có sẵn trước.",
+          injuriesCallout:
+            "Chọn các gợi ý song ngữ bên dưới. Nếu chọn <code>Other</code>, hãy nhập thêm bằng tiếng Anh.",
+          injuriesPresetIntro:
+            "Các lựa chọn này được khuyến nghị trước để hệ thống hiểu nhanh hơn và giữ giá trị tiếng Anh chuẩn khi gửi đi.",
+          otherInjuriesLabel: "Mô tả thêm bằng tiếng Anh",
+          otherInjuriesPlaceholder: "Occasional knee discomfort",
+          otherEnglishHelper:
+            "Mỗi dòng một ý ngắn bằng tiếng Anh. Ví dụ: <code>Occasional knee discomfort</code>",
+          injuriesHelper:
+            "Chọn sẵn nếu có thể. Dùng mục khác chỉ khi bạn cần bổ sung ngoài danh sách.",
           preferencesLabel: "Sở thích tập luyện",
           preferencesCallout:
-            "Ví dụ: <code>Strength training</code>, <code>Low-impact cardio</code>",
-          preferencesPlaceholder: "Strength training\nLow-impact cardio",
-          preferencesHelper: "Những cụm ngắn bằng tiếng Anh hiện cho kết quả ổn định nhất.",
+            "Các gợi ý bên dưới đã kèm nghĩa tiếng Việt. Nếu thêm mục riêng, hãy dùng tiếng Anh ngắn.",
+          preferencesPresetIntro:
+            "Các gợi ý này giúp bạn chọn nhanh hơn và vẫn giữ được cụm tiếng Anh ngắn, dễ truy xuất.",
+          otherPreferencesLabel: "Mô tả thêm bằng tiếng Anh",
+          otherPreferencesPlaceholder: "Strength training\nLow-impact cardio",
+          otherEnglishPreferencesHelper:
+            "Mỗi dòng một ý ngắn bằng tiếng Anh. Ví dụ: <code>Strength training</code>",
+          preferencesHelper:
+            "Giá trị gửi đi luôn được chuẩn hóa thành cụm tiếng Anh ngắn.",
           generateButton: "Tạo kế hoạch",
           generatingButton: "Đang tạo...",
           resultTitle: "Kế hoạch của bạn",
@@ -736,9 +828,13 @@ Low-impact cardio</textarea>
           genericGenerateError: "Không thể tạo kế hoạch lúc này.",
           genericFeedbackError: "Không thể lưu phản hồi lúc này.",
           englishOnlyInjuries:
-            "Ô giới hạn hoặc cảm giác khó chịu cần nhập bằng tiếng Anh ngắn gọn. Ví dụ: Occasional knee discomfort.",
+            "Phần nhập thêm cho giới hạn hoặc cảm giác khó chịu phải dùng tiếng Anh an toàn. Ví dụ: Occasional knee discomfort.",
           englishOnlyPreferences:
-            "Ô sở thích tập luyện cần nhập bằng tiếng Anh ngắn gọn. Ví dụ: Strength training.",
+            "Phần nhập thêm cho sở thích tập luyện phải dùng tiếng Anh an toàn. Ví dụ: Strength training.",
+          otherInjuriesRequired:
+            "Bạn đã chọn Other cho phần giới hạn hoặc cảm giác khó chịu. Hãy nhập ít nhất một ý bằng tiếng Anh.",
+          otherPreferencesRequired:
+            "Bạn đã chọn Other cho phần sở thích tập luyện. Hãy nhập ít nhất một ý bằng tiếng Anh.",
           severityInfo: "Thông tin",
           severityCaution: "Lưu ý",
           severityStop: "Dừng lại",
@@ -767,7 +863,7 @@ Low-impact cardio</textarea>
           pointThreeBody: "Rate the plan for usefulness, difficulty, and safety as soon as you read it.",
           formTitle: "Training profile",
           formIntro:
-            "Start with the essentials. The two free-text fields work best with short English notes for now.",
+            "Start with the essentials. Preset suggestions are recommended below; if you add your own items, enter them in English.",
           goalLegend: "Goal",
           goalFatLoss: "Fat loss",
           goalMuscleGain: "Muscle gain",
@@ -793,15 +889,28 @@ Low-impact cardio</textarea>
           equipmentFullGym: "Full gym",
           equipmentHelper: "Choose at least one option so the plan stays realistic for your setup.",
           injuriesLabel: "Limitations or discomfort",
-          englishOnlyTitle: "Use short English text in both free-text fields.",
-          injuriesCallout: "Example: <code>Occasional knee discomfort</code>",
-          injuriesPlaceholder: "Occasional knee discomfort",
-          injuriesHelper: "One short point per line is easiest for the current system to read.",
+          presetsRecommendedTitle: "Preset suggestions are recommended.",
+          injuriesCallout:
+            "Use the bilingual suggestions below first. If you choose <code>Other</code>, add your own entries in English.",
+          injuriesPresetIntro:
+            "These preset options keep the form easier to complete and send canonical English values to the Worker.",
+          otherInjuriesLabel: "Add another item in English",
+          otherInjuriesPlaceholder: "Occasional knee discomfort",
+          otherEnglishHelper:
+            "One short English item per line. Example: <code>Occasional knee discomfort</code>",
+          injuriesHelper:
+            "Use the presets when possible. Choose Other only when you need something not listed.",
           preferencesLabel: "Exercise preferences",
           preferencesCallout:
-            "Examples: <code>Strength training</code>, <code>Low-impact cardio</code>",
-          preferencesPlaceholder: "Strength training\nLow-impact cardio",
-          preferencesHelper: "Short English phrases currently produce the most stable results.",
+            "The suggestions below already cover common beginner-friendly preferences. Add custom items in English only.",
+          preferencesPresetIntro:
+            "These suggestions reduce blank-state friction and still submit concise canonical English phrases.",
+          otherPreferencesLabel: "Add another preference in English",
+          otherPreferencesPlaceholder: "Strength training\nLow-impact cardio",
+          otherEnglishPreferencesHelper:
+            "One short English item per line. Example: <code>Strength training</code>",
+          preferencesHelper:
+            "Submitted values always stay normalized as short English phrases.",
           generateButton: "Generate plan",
           generatingButton: "Generating...",
           resultTitle: "Your plan",
@@ -844,9 +953,13 @@ Low-impact cardio</textarea>
           genericGenerateError: "The plan could not be generated right now.",
           genericFeedbackError: "Feedback could not be saved right now.",
           englishOnlyInjuries:
-            "The limitations field must use short English text. Example: Occasional knee discomfort.",
+            "Custom limitations must use English-safe text. Example: Occasional knee discomfort.",
           englishOnlyPreferences:
-            "The exercise preferences field must use short English text. Example: Strength training.",
+            "Custom exercise preferences must use English-safe text. Example: Strength training.",
+          otherInjuriesRequired:
+            "You selected Other for limitations or discomfort. Add at least one English item.",
+          otherPreferencesRequired:
+            "You selected Other for exercise preferences. Add at least one English item.",
           severityInfo: "Info",
           severityCaution: "Caution",
           severityStop: "Stop",
@@ -877,9 +990,26 @@ Low-impact cardio</textarea>
       const resultState = document.getElementById("result-state");
       const resultRoot = document.getElementById("result-root");
       const languageButtons = document.querySelectorAll("[data-lang-choice]");
+      const profileFields = [
+        {
+          fieldName: "injuries_or_limitations",
+          containerId: "injuries_or_limitations_presets",
+          otherWrapId: "injuries_or_limitations_other_wrap",
+        },
+        {
+          fieldName: "exercise_preferences",
+          containerId: "exercise_preferences_presets",
+          otherWrapId: "exercise_preferences_other_wrap",
+        },
+      ];
 
       languageButtons.forEach((button) => {
         button.addEventListener("click", () => setLanguage(button.dataset.langChoice));
+      });
+
+      profileFields.forEach((config) => {
+        const container = document.getElementById(config.containerId);
+        container.addEventListener("change", () => syncOtherVisibility(config.fieldName));
       });
 
       form.addEventListener("submit", async (event) => {
@@ -958,6 +1088,8 @@ Low-impact cardio</textarea>
           }
         });
 
+        renderProfileFieldOptions();
+
         languageButtons.forEach((button) => {
           button.setAttribute("aria-pressed", String(button.dataset.langChoice === state.language));
         });
@@ -981,16 +1113,40 @@ Low-impact cardio</textarea>
           session_duration_minutes: Number(data.get("session_duration_minutes")),
           equipment: data.getAll("equipment"),
           training_location: data.get("training_location"),
-          injuries_or_limitations: splitLines(data.get("injuries_or_limitations_text")),
-          exercise_preferences: splitLines(data.get("exercise_preferences_text")),
+          injuries_or_limitations: collectProfileFieldSelection("injuries_or_limitations"),
+          exercise_preferences: collectProfileFieldSelection("exercise_preferences"),
         };
       }
 
-      function splitLines(value) {
-        return String(value || "")
-          .split("\n")
-          .map((item) => item.trim())
-          .filter(Boolean);
+      function collectProfileFieldSelection(fieldName) {
+        const selectedValues = Array.from(
+          form.querySelectorAll(`input[name="${fieldName}_preset"]:checked`),
+          (input) => input.value,
+        );
+        const otherInput = document.getElementById(getOtherInputId(fieldName));
+
+        try {
+          clearCustomInputError(fieldName);
+          return normalizeProfileFieldSelection(fieldName, selectedValues, otherInput?.value || "");
+        } catch (error) {
+          if (error.code === "CUSTOM_REQUIRED") {
+            markCustomInputError(fieldName);
+            throw new Error(
+              fieldName === "injuries_or_limitations"
+                ? currentCopy().otherInjuriesRequired
+                : currentCopy().otherPreferencesRequired,
+            );
+          }
+          if (error.code === "ENGLISH_ONLY") {
+            markCustomInputError(fieldName);
+            throw new Error(
+              fieldName === "injuries_or_limitations"
+                ? currentCopy().englishOnlyInjuries
+                : currentCopy().englishOnlyPreferences,
+            );
+          }
+          throw error;
+        }
       }
 
       function showAlert(message) {
@@ -1211,13 +1367,6 @@ Low-impact cardio</textarea>
           throw new Error(currentCopy().englishOnlyPreferences);
         }
       }
-
-      function containsVietnameseCharacters(value) {
-        return /[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i.test(
-          String(value || ""),
-        );
-      }
-
       function localizeApiError(message, fallbackMessage) {
         const normalized = String(message || "").trim();
         if (!normalized) {
@@ -1264,3 +1413,71 @@ Low-impact cardio</textarea>
     </script>
   </body>
 </html>
+      function renderProfileFieldOptions() {
+        profileFields.forEach(({ fieldName, containerId }) => {
+          const container = document.getElementById(containerId);
+          const selectedValues = new Set(
+            Array.from(
+              container.querySelectorAll(`input[name="${fieldName}_preset"]:checked`),
+              (input) => input.value,
+            ),
+          );
+          const presets = PROFILE_FIELD_PRESETS[fieldName];
+          container.innerHTML = presets
+            .map((preset) => renderPresetCard(fieldName, preset, selectedValues.has(preset.value)))
+            .join("");
+          syncOtherVisibility(fieldName);
+        });
+      }
+
+      function renderPresetCard(fieldName, preset, checked) {
+        const isVietnamese = state.language === "vi";
+        const title = isVietnamese ? preset.viLabel : preset.enLabel;
+        const note = isVietnamese
+          ? `${preset.enLabel}${preset.viHint ? ` - ${preset.viHint}` : ""}`
+          : preset.value === OTHER_OPTION_VALUE
+            ? "Add your own English entry"
+            : "Canonical English value";
+        return `
+          <label class="preset-card">
+            <input
+              type="checkbox"
+              name="${fieldName}_preset"
+              value="${escapeHtml(preset.value)}"
+              ${checked ? "checked" : ""}
+            />
+            <span>
+              <span class="preset-card-title">${escapeHtml(title)}</span>
+              <span class="preset-card-note">${escapeHtml(note)}</span>
+            </span>
+          </label>
+        `;
+      }
+
+      function syncOtherVisibility(fieldName) {
+        const otherWrap = document.getElementById(`${fieldName}_other_wrap`);
+        const otherInput = document.getElementById(getOtherInputId(fieldName));
+        const isChecked = form.querySelector(
+          `input[name="${fieldName}_preset"][value="${OTHER_OPTION_VALUE}"]`,
+        )?.checked;
+
+        otherWrap.classList.toggle("hidden", !isChecked);
+        if (!isChecked) {
+          otherInput.value = "";
+          clearCustomInputError(fieldName);
+        }
+      }
+
+      function markCustomInputError(fieldName) {
+        const otherInput = document.getElementById(getOtherInputId(fieldName));
+        if (otherInput) {
+          otherInput.setAttribute("aria-invalid", "true");
+        }
+      }
+
+      function clearCustomInputError(fieldName) {
+        const otherInput = document.getElementById(getOtherInputId(fieldName));
+        if (otherInput) {
+          otherInput.removeAttribute("aria-invalid");
+        }
+      }

@@ -11,9 +11,17 @@ test("public homepage keeps a simplified bilingual workout-plan flow", () => {
   assert.match(publicHtml, /Training profile/);
   assert.match(publicHtml, /data-lang-choice="vi"/);
   assert.match(publicHtml, /data-lang-choice="en"/);
-  assert.match(publicHtml, /Use short English text in both free-text fields\./);
+  assert.match(publicHtml, /Preset suggestions are recommended\./);
+  assert.match(publicHtml, /Nên chọn từ các gợi ý có sẵn trước\./);
+  assert.match(publicHtml, /Use the bilingual suggestions below first\./);
+  assert.match(publicHtml, /Các gợi ý bên dưới đã kèm nghĩa tiếng Việt\./);
+  assert.match(publicHtml, /id="injuries_or_limitations_presets"/);
+  assert.match(publicHtml, /id="exercise_preferences_presets"/);
+  assert.match(publicHtml, /profile-fields\.mjs/);
+  assert.match(publicHtml, /Other/);
   assert.match(publicHtml, /Occasional knee discomfort/);
   assert.match(publicHtml, /Strength training/);
+  assert.match(publicHtml, /Low-impact cardio/);
 });
 
 test("public homepage no longer exposes project-process messaging", () => {
