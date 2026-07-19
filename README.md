@@ -315,6 +315,68 @@ npx wrangler deploy
 `LANGFUSE_BASE_URL` are configured in `wrangler.toml` and can be overridden per
 environment there.
 
+## GitHub Actions Deployment
+
+This repo now includes [`cloudflare-worker.yml`](.github/workflows/cloudflare-worker.yml).
+
+- pull requests into `main`: run the Worker test suite only
+- pushes to `main`: run the Worker tests, then deploy the Worker to Cloudflare
+- manual trigger: available through `workflow_dispatch`
+
+Important operational boundary:
+
+- the workflow deploys application code only
+- it does not auto-apply remote D1 migrations on every push
+- if you add a new D1 migration, apply it intentionally before or during release:
+
+```bash
+npx wrangler d1 migrations apply FITCOACH_DB --remote
+```
+
+### What you need to connect between GitHub and Cloudflare
+
+You do not need to connect the GitHub repository from the Cloudflare dashboard
+if you use this GitHub Actions path. The deployment link is:
+
+1. GitHub Actions runs on push to `main`
+2. the workflow authenticates to Cloudflare with an API token
+3. `wrangler deploy` publishes the Worker
+
+Add these two GitHub repository secrets in `Settings -> Secrets and variables -> Actions`:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+
+Recommended API token scope:
+
+- `Account`
+- `Cloudflare Workers:Edit`
+- `D1:Edit` only if you also want to run D1 commands from CI later
+
+How to get them:
+
+1. In Cloudflare, open `My Profile -> API Tokens`.
+2. Create a custom token with `Cloudflare Workers:Edit`.
+3. In Cloudflare dashboard, copy the Account ID from the right sidebar of any account overview page.
+4. Save both values as GitHub Actions secrets.
+
+### What still lives on Cloudflare, not on GitHub
+
+Worker runtime secrets should stay in Cloudflare:
+
+```bash
+npx wrangler secret put OPENAI_API_KEY
+npx wrangler secret put QDRANT_API_KEY
+npx wrangler secret put LANGFUSE_PUBLIC_KEY
+npx wrangler secret put LANGFUSE_SECRET_KEY
+```
+
+Also make sure the Worker account already has:
+
+- the `FITCOACH_DB` D1 binding from `wrangler.toml`
+- the remote D1 schema applied
+- plain config values from `wrangler.toml` kept in sync with production intent
+
 ## Legacy Render Deployment Path
 
 Deprecated: Render remains documented only as a legacy MVP path. It is no
