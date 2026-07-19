@@ -379,6 +379,66 @@ test("POST /api/workout-plans still succeeds when Langfuse is not configured", a
   }
 });
 
+test("POST /api/workout-plans exposes sanitized OpenAI error details on upstream failure", async () => {
+  const db = new FakeD1Database();
+  const env = createEnv(db);
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("/points/query")) {
+      return Response.json({ result: [] });
+    }
+    if (String(url) === "https://api.openai.com/v1/responses") {
+      return new Response(
+        JSON.stringify({
+          error: {
+            message: "The model `gpt-4.1-mini` does not exist or you do not have access to it.",
+            type: "invalid_request_error",
+            param: "model",
+            code: "model_not_found",
+          },
+        }),
+        {
+          status: 404,
+          headers: {
+            "content-type": "application/json",
+            "x-request-id": "openai_req_test_123",
+          },
+        },
+      );
+    }
+    throw new Error(`Unexpected fetch URL: ${url}`);
+  };
+
+  try {
+    const response = await handleRequest(
+      new Request("https://example.com/api/workout-plans", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(validProfile()),
+      }),
+      env,
+      {},
+    );
+
+    assert.equal(response.status, 502);
+    const body = await response.json();
+    assert.equal(body.error.code, "OPENAI_REQUEST_FAILED");
+    assert.deepEqual(body.error.details, {
+      provider: "openai",
+      status: 404,
+      request_id: "openai_req_test_123",
+      type: "invalid_request_error",
+      code: "model_not_found",
+      param: "model",
+      message: "The model `gpt-4.1-mini` does not exist or you do not have access to it.",
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("POST /api/workout-plans rejects duplicate equipment values", async () => {
   const db = new FakeD1Database();
   const env = createEnv(db);

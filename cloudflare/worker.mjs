@@ -1052,7 +1052,12 @@ async function embedText(text, env) {
   });
 
   if (!response.ok) {
-    throw new AppError(502, "OPENAI_REQUEST_FAILED", "The workout generation service request failed.");
+    throw new AppError(
+      502,
+      "OPENAI_REQUEST_FAILED",
+      "The workout generation service request failed.",
+      await buildOpenAIErrorDetails(response),
+    );
   }
 
   const body = await response.json();
@@ -1100,7 +1105,12 @@ async function generateWorkoutPlan(profile, retrievedChunks, env) {
     });
 
     if (!response.ok) {
-      throw new AppError(502, "OPENAI_REQUEST_FAILED", "The workout generation service request failed.");
+      throw new AppError(
+        502,
+        "OPENAI_REQUEST_FAILED",
+        "The workout generation service request failed.",
+        await buildOpenAIErrorDetails(response),
+      );
     }
 
     const body = await response.json();
@@ -1164,6 +1174,53 @@ function extractRefusal(body) {
   }
 
   return null;
+}
+
+async function buildOpenAIErrorDetails(response) {
+  const details = {
+    provider: "openai",
+    status: response.status,
+    request_id:
+      response.headers.get("x-request-id") ||
+      response.headers.get("openai-request-id") ||
+      null,
+  };
+
+  const contentType = response.headers.get("content-type") || "";
+
+  try {
+    if (contentType.includes("application/json")) {
+      const body = await response.json();
+      const error = body?.error;
+      return {
+        ...details,
+        type: typeof error?.type === "string" ? error.type : null,
+        code: typeof error?.code === "string" ? error.code : null,
+        param: typeof error?.param === "string" ? error.param : null,
+        message:
+          typeof error?.message === "string"
+            ? error.message.slice(0, 500)
+            : "OpenAI returned a non-success response.",
+      };
+    }
+
+    const text = (await response.text()).trim();
+    return {
+      ...details,
+      type: null,
+      code: null,
+      param: null,
+      message: text ? text.slice(0, 500) : "OpenAI returned a non-success response.",
+    };
+  } catch {
+    return {
+      ...details,
+      type: null,
+      code: null,
+      param: null,
+      message: "OpenAI returned a non-success response.",
+    };
+  }
 }
 
 function containsMedicalRisk(profile) {
